@@ -1,0 +1,10 @@
+export * from './auth.service.ts'
+export * from './profissional.service.ts'
+export * from './clientes.service.ts'
+export * from './projetos.service.ts'
+export * from './versoes.service.ts'
+export * from './comentarios.service.ts'
+export * from './portal.service.ts'
+export * from './health.service.ts'
+export * from './dashboard.service.ts'
+
