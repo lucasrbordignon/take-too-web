@@ -491,10 +491,8 @@ export function ClientPortalPage() {
 
               {filteredComments.length === 0 ? (
                 <div className="py-8 px-4 text-center flex flex-col items-center justify-center gap-1.5 bg-[#151820]/60 rounded-[12px] border border-dashed border-[#343946]/50">
-                  <p className="text-[13px] font-medium text-[#E2E5EA]">
-                    {autorFilter === 'TODOS'
-                      ? 'Nenhum comentário adicionado ainda nesta versão'
-                      : `Nenhum comentário de ${autorFilter === 'CLIENTE' ? 'cliente' : 'profissional'} nesta versão`}
+                  <p className="text-[14px] font-semibold text-[#F8FAFC]">
+                    Nenhum comentário encontrado
                   </p>
                   <p className="text-[12px] text-[#A8B0C0]">
                     Pause o vídeo em qualquer ponto e clique em &quot;Adicionar feedback&quot; para registrar marcações na timeline.

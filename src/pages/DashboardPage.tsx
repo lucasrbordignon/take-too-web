@@ -5,71 +5,8 @@ import { useProjetos } from '../hooks/useProjetos.ts'
 import { useDashboardMetricas } from '../hooks/useDashboardMetricas.ts'
 import { NovoProjetoModal } from '../components/NovoProjetoModal.tsx'
 import { formatRelativeTime } from '../utils/date.ts'
-import type { StatusProjeto } from '../api/types.ts'
 
-interface ShowcaseProject {
-  id: string
-  nome: string
-  clienteNome: string
-  status: StatusProjeto | 'REVISAO_CLIENTE' | 'EM_EDICAO' | 'APROVADO' | 'GRAVACAO_CONCLUIDA' | 'ENTREGUE'
-  statusLabel: string
-  badgeBg: string
-  thumbnailBg: string
-  dataLabel: string
-}
 
-const SHOWCASE_PROJECTS: ShowcaseProject[] = [
-  {
-    id: 'showcase-1',
-    nome: 'Campanha Aurora',
-    clienteNome: 'Studio Aurora',
-    status: 'REVISAO_CLIENTE',
-    statusLabel: 'REVISÃO DO CLIENTE',
-    badgeBg: 'bg-[#F59E0B]',
-    thumbnailBg: 'bg-[#F59E0B]',
-    dataLabel: 'Hoje, 09:42',
-  },
-  {
-    id: 'showcase-2',
-    nome: 'Casamento Marina & Theo',
-    clienteNome: 'Marina Duarte',
-    status: 'EM_EDICAO',
-    statusLabel: 'EM EDIÇÃO',
-    badgeBg: 'bg-[#8B5CF6]',
-    thumbnailBg: 'bg-[#8B5CF6]',
-    dataLabel: 'Ontem, 18:10',
-  },
-  {
-    id: 'showcase-3',
-    nome: 'Doc Natureza Viva',
-    clienteNome: 'BioFilmes',
-    status: 'APROVADO',
-    statusLabel: 'APROVADO',
-    badgeBg: 'bg-[#10B981]',
-    thumbnailBg: 'bg-[#10B981]',
-    dataLabel: '18 set',
-  },
-  {
-    id: 'showcase-4',
-    nome: 'Comercial Urban Fit',
-    clienteNome: 'Academia Pulse',
-    status: 'GRAVACAO_CONCLUIDA',
-    statusLabel: 'GRAVAÇÃO CONCLUÍDA',
-    badgeBg: 'bg-[#6366F1]',
-    thumbnailBg: 'bg-[#6366F1]',
-    dataLabel: '15 set',
-  },
-  {
-    id: 'showcase-5',
-    nome: 'Clipe Musical Neon',
-    clienteNome: 'Banda Prisma',
-    status: 'ENTREGUE',
-    statusLabel: 'ENTREGUE',
-    badgeBg: 'bg-[#6B7280]',
-    thumbnailBg: 'bg-[#6B7280]',
-    dataLabel: '10 set',
-  },
-]
 
 const statusStylesMap: Record<
   string,
@@ -109,26 +46,26 @@ export function DashboardPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   // First name greeting
-  const firstName = user?.nome ? user.nome.split(' ')[0] : 'Lucas'
+  const firstName = user?.nome ? user.nome.split(' ')[0] : 'Produtor'
 
-  // Metric counts and growth indicators: real backend metrics or showcase fallback
-  const emAndamentoVal = metricas?.projetosEmAndamento ?? (realProjetos?.length ? 0 : 6)
-  const novosEstaSemanaVal = metricas?.projetosNovosEstaSemana ?? (realProjetos?.length ? 0 : 2)
-  const aguardandoVal = metricas?.aguardandoAprovacao ?? (realProjetos?.length ? 0 : 3)
-  const maisDeDoisDiasVal = metricas?.aguardandoMaisDeDoisDias ?? (realProjetos?.length ? 0 : 1)
-  const concluidosVal = metricas?.concluidos ?? (realProjetos?.length ? 0 : 18)
-  const concluidosEsteMesVal = metricas?.concluidosEsteMes ?? (realProjetos?.length ? 0 : 4)
+  // Metric counts and growth indicators: real backend metrics
+  const emAndamentoVal = metricas?.projetosEmAndamento ?? 0
+  const novosEstaSemanaVal = metricas?.projetosNovosEstaSemana ?? 0
+  const aguardandoVal = metricas?.aguardandoAprovacao ?? 0
+  const maisDeDoisDiasVal = metricas?.aguardandoMaisDeDoisDias ?? 0
+  const concluidosVal = metricas?.concluidos ?? 0
+  const concluidosEsteMesVal = metricas?.concluidosEsteMes ?? 0
 
-  // Display projects: prioritize backend metricas.projetosRecentes, then realProjetos, or showcase
+  // Display projects: prioritize backend metricas.projetosRecentes, then realProjetos
   const displayProjects = useMemo(() => {
     const rawList =
       metricas?.projetosRecentes && metricas.projetosRecentes.length > 0
         ? metricas.projetosRecentes
         : realProjetos && realProjetos.length > 0
         ? realProjetos.slice(0, 5)
-        : null
+        : []
 
-    if (rawList && rawList.length > 0) {
+    if (rawList.length > 0) {
       return rawList.map((proj, idx) => {
         const style =
           statusStylesMap[proj.etapaAtual || ''] || statusStylesMap.EM_EDICAO
@@ -146,7 +83,7 @@ export function DashboardPage() {
       })
     }
 
-    return SHOWCASE_PROJECTS
+    return []
   }, [metricas, realProjetos])
 
   return (
@@ -236,7 +173,38 @@ export function DashboardPage() {
         </div>
 
         {/* Project rows */}
-        <div className="flex flex-col">
+        {displayProjects.length === 0 ? (
+          <div className="py-12 flex flex-col items-center justify-center text-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-[#242832] flex items-center justify-center text-[#788194]">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
+                <line x1="7" y1="2" x2="7" y2="22" />
+                <line x1="17" y1="2" x2="17" y2="22" />
+                <line x1="2" y1="12" x2="22" y2="12" />
+                <line x1="2" y1="7" x2="7" y2="7" />
+                <line x1="2" y1="17" x2="7" y2="17" />
+                <line x1="17" y1="17" x2="22" y2="17" />
+                <line x1="17" y1="7" x2="22" y2="7" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-[16px] font-semibold text-[#F8FAFC]">
+                Nenhum projeto recente
+              </h3>
+              <p className="text-[13px] text-[#788194] mt-1">
+                Crie um novo projeto para começar a gerenciar cortes e revisões.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(true)}
+              className="mt-2 px-4 py-2 bg-[#8B5CF6]/15 hover:bg-[#8B5CF6]/25 text-[#A78BFA] border border-[#8B5CF6]/30 hover:border-[#8B5CF6]/50 rounded-[10px] text-[13px] font-semibold transition-all cursor-pointer"
+            >
+              + Criar primeiro projeto
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col">
           {displayProjects.map((proj, index) => {
             const isLast = index === displayProjects.length - 1
 
@@ -299,6 +267,7 @@ export function DashboardPage() {
             )
           })}
         </div>
+        )}
       </div>
 
       {/* Reusable New Project Modal */}

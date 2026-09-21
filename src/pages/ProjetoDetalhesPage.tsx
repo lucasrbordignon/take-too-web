@@ -10,7 +10,7 @@ import { ConfirmRevocationDialog } from '../components/shared/ConfirmRevocationD
 import { ConfirmStageModal, type StageModalType } from '../components/shared/ConfirmStageModal.tsx'
 import { useToast } from '../context/useToast.ts'
 import { formatRelativeTime } from '../utils/date.ts'
-import type { StatusProjeto, AtividadeDTO } from '../api/types.ts'
+import type { StatusProjeto } from '../api/types.ts'
 
 const STAGES: { id: StatusProjeto }[] = [
   { id: 'GRAVACAO_CONCLUIDA' },
@@ -20,82 +20,11 @@ const STAGES: { id: StatusProjeto }[] = [
   { id: 'ENTREGUE' },
 ]
 
-interface ShowcaseVersion {
-  id: string
-  numero: number
-  badge: string
-  titulo: string
-  subtitle: string
-  statusLabel: string
-  statusBg: string
-}
 
-const SHOWCASE_VERSIONS: ShowcaseVersion[] = [
-  {
-    id: 'v-2',
-    numero: 2,
-    badge: 'V2',
-    titulo: 'Corte preliminar',
-    subtitle: 'Publicado hoje, 09:30 · 5 comentários',
-    statusLabel: 'PENDENTE',
-    statusBg: 'bg-[#F59E0B]',
-  },
-  {
-    id: 'v-1',
-    numero: 1,
-    badge: 'V1',
-    titulo: 'Primeiro corte',
-    subtitle: '14 set, 16:08 · 8 ajustes solicitados',
-    statusLabel: 'REJEITADA',
-    statusBg: 'bg-[#EF4444]',
-  },
-]
-
-const FALLBACK_SHOWCASE_ATIVIDADES: AtividadeDTO[] = [
-  {
-    id: 'demo-atv-1',
-    tipo: 'COMENTARIO_ADICIONADO',
-    titulo: 'Cliente comentou em 02:18',
-    descricao: 'Ajustar o corte da cena final.',
-    autor: 'Cliente',
-    autorTipo: 'CLIENTE',
-    timestamp: new Date(Date.now() - 1000 * 60 * 18).toISOString(),
-    tempoVideo: '02:18',
-  },
-  {
-    id: 'demo-atv-2',
-    tipo: 'COMENTARIO_ADICIONADO',
-    titulo: 'Cliente comentou em 00:42',
-    descricao: 'Inserir trilha sonora suave.',
-    autor: 'Cliente',
-    autorTipo: 'CLIENTE',
-    timestamp: new Date(Date.now() - 1000 * 60 * 22).toISOString(),
-    tempoVideo: '00:42',
-  },
-  {
-    id: 'demo-atv-3',
-    tipo: 'VERSAO_PUBLICADA',
-    titulo: 'Versão 2 publicada',
-    descricao: 'Novo corte após revisão inicial.',
-    autor: 'Você',
-    autorTipo: 'PROFISSIONAL',
-    timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-    versaoNumero: 2,
-  },
-  {
-    id: 'demo-atv-4',
-    tipo: 'PROJETO_CRIADO',
-    titulo: 'Projeto criado',
-    descricao: 'Projeto iniciado no TakeToo.',
-    autor: 'Sistema',
-    autorTipo: 'SISTEMA',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-  },
-]
 
 export function ProjetoDetalhesPage() {
   const { id } = useParams<{ id: string }>()
-  const { data: realProjeto } = useProjeto(id)
+  const { data: realProjeto, isLoading: isLoadingProjeto, isError: isErrorProjeto } = useProjeto(id)
   const { data: realVersoes } = useVersoes(id)
   const { data: realAtividades = [], isLoading: carregandoAtividades } = useAtividades(id)
   const { mutate: atualizarStatus, isPending: isUpdatingStatus } = useAtualizarStatusProjeto()
@@ -115,24 +44,22 @@ export function ProjetoDetalhesPage() {
   const [pendingTargetStage, setPendingTargetStage] = useState<StatusProjeto | null>(null)
   const [localEtapa, setLocalEtapa] = useState<StatusProjeto | null>(null)
 
-  // Project data (real with design fallback)
+  // Project data
   const projeto = useMemo(() => {
     return {
-      id: id || '1',
-      nome: realProjeto?.nome || 'Campanha Aurora',
-      clienteNome: realProjeto?.cliente?.nome || 'Studio Aurora',
-      clienteEmail: realProjeto?.cliente?.email || 'contato@studioaurora.com',
-      clienteTelefone: realProjeto?.cliente?.telefone || '+55 15 99876-4321',
-      etapaAtual: (localEtapa || realProjeto?.etapaAtual || 'REVISAO_CLIENTE') as StatusProjeto,
+      id: id || '',
+      nome: realProjeto?.nome || 'Carregando projeto...',
+      clienteNome: realProjeto?.cliente?.nome || 'Sem cliente vinculado',
+      clienteEmail: realProjeto?.cliente?.email || 'Sem e-mail cadastrado',
+      clienteTelefone: realProjeto?.cliente?.telefone || 'Sem telefone cadastrado',
+      etapaAtual: (localEtapa || realProjeto?.etapaAtual || 'EM_EDICAO') as StatusProjeto,
     }
   }, [id, realProjeto, localEtapa])
 
-  // Resolve activities: real from API or demo fallback for showcase mode
+  // Resolve activities: real from API
   const displayAtividades = useMemo(() => {
-    if (realProjeto) return realAtividades
-    if (realAtividades && realAtividades.length > 0) return realAtividades
-    return FALLBACK_SHOWCASE_ATIVIDADES
-  }, [realProjeto, realAtividades])
+    return realAtividades || []
+  }, [realAtividades])
 
   // Current stage index
   const currentStageIndex = useMemo(() => {
@@ -342,7 +269,7 @@ export function ProjetoDetalhesPage() {
     })
   }
 
-  // Version list: real versions or design showcase
+  // Version list: real versions
   const versionsList = useMemo(() => {
     if (realVersoes && realVersoes.length > 0) {
       return realVersoes.map((v, idx) => {
@@ -356,7 +283,7 @@ export function ProjetoDetalhesPage() {
           id: v.id || String(idx),
           numero: num,
           badge: `V${num}`,
-          titulo: num === 1 ? 'Primeiro corte' : 'Corte preliminar',
+          titulo: num === 1 ? 'Primeiro corte' : `Corte versão ${num}`,
           subtitle: v.criadoEm
             ? `Publicado ${formatRelativeTime(v.criadoEm)} · Versão ${num}`
             : `Publicado · Versão ${num}`,
@@ -366,8 +293,34 @@ export function ProjetoDetalhesPage() {
       })
     }
 
-    return SHOWCASE_VERSIONS
+    return []
   }, [realVersoes])
+
+  if (!isLoadingProjeto && (!realProjeto || isErrorProjeto)) {
+    return (
+      <div className="w-full py-16 flex flex-col items-center justify-center text-center gap-4">
+        <div className="w-14 h-14 rounded-full bg-[#242832] flex items-center justify-center text-[#788194]">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+        </div>
+        <div>
+          <h2 className="text-[20px] font-bold text-[#F8FAFC]">Nenhum projeto encontrado</h2>
+          <p className="text-[14px] text-[#788194] mt-1">
+            O projeto solicitado não foi localizado ou não existe mais.
+          </p>
+        </div>
+        <Link
+          to="/projetos"
+          className="mt-2 px-4 py-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-[10px] text-[13px] font-semibold transition-all shadow-md cursor-pointer"
+        >
+          ← Voltar para Projetos
+        </Link>
+      </div>
+    )
+  }
 
   return (
     <div className="w-full flex flex-col gap-6 pb-12">
@@ -619,7 +572,32 @@ export function ProjetoDetalhesPage() {
             </h2>
 
             <div className="flex flex-col gap-3.5">
-              {versionsList.map((ver) => (
+              {versionsList.length === 0 ? (
+                <div className="w-full bg-[#1A1D24] border border-dashed border-[#343946]/60 rounded-[16px] p-8 text-center flex flex-col items-center justify-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#242832] flex items-center justify-center text-[#788194]">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="23 7 16 12 23 17 23 7" />
+                      <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-[14px] font-semibold text-[#F8FAFC]">
+                      Nenhuma versão publicada
+                    </h3>
+                    <p className="text-[12px] text-[#788194] mt-0.5">
+                      Suba o primeiro corte para coletar revisões e comentários no timecode.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsNovaVersaoOpen(true)}
+                    className="mt-1 px-3.5 py-1.5 bg-[#8B5CF6]/15 hover:bg-[#8B5CF6]/25 text-[#A78BFA] border border-[#8B5CF6]/30 hover:border-[#8B5CF6]/50 rounded-[8px] text-[12px] font-semibold transition-all cursor-pointer"
+                  >
+                    + Adicionar versão
+                  </button>
+                </div>
+              ) : (
+                versionsList.map((ver) => (
                 <div
                   key={ver.id}
                   className="w-full bg-[#1A1D24] border border-[#343946]/30 rounded-[16px] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm hover:border-[#8B5CF6]/40 transition-colors group"
@@ -661,7 +639,8 @@ export function ProjetoDetalhesPage() {
                     </Link>
                   </div>
                 </div>
-              ))}
+              ))
+            )}
             </div>
           </div>
         </div>
@@ -688,12 +667,21 @@ export function ProjetoDetalhesPage() {
             </div>
 
             <div className="pt-2">
-              <Link
-                to={`/clientes?clienteId=${realProjeto?.cliente?.id || 'showcase-client-1'}`}
-                className="text-[12px] leading-[15px] font-semibold text-[#A78BFA] hover:text-white transition-colors"
-              >
-                Ver cadastro →
-              </Link>
+              {realProjeto?.cliente?.id ? (
+                <Link
+                  to={`/clientes?clienteId=${realProjeto.cliente.id}`}
+                  className="text-[12px] leading-[15px] font-semibold text-[#A78BFA] hover:text-white transition-colors"
+                >
+                  Ver cadastro →
+                </Link>
+              ) : (
+                <Link
+                  to="/clientes"
+                  className="text-[12px] leading-[15px] font-semibold text-[#A78BFA] hover:text-white transition-colors"
+                >
+                  Ver clientes →
+                </Link>
+              )}
             </div>
           </div>
 

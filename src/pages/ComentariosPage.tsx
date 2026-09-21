@@ -199,6 +199,31 @@ export function ComentariosPage() {
             <div key={i} className="h-28 bg-[#1A1D24] rounded-[14px] animate-pulse" />
           ))}
         </div>
+      ) : (!projetos || projetos.length === 0) ? (
+        <div className="bg-[#1A1D24] border border-[#2E3440] rounded-[16px] p-12 text-center flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-full bg-[#242832] flex items-center justify-center text-[#788194]">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
+              <line x1="7" y1="2" x2="7" y2="22" />
+              <line x1="17" y1="2" x2="17" y2="22" />
+              <line x1="2" y1="12" x2="22" y2="12" />
+              <line x1="2" y1="7" x2="7" y2="7" />
+              <line x1="2" y1="17" x2="7" y2="17" />
+              <line x1="17" y1="17" x2="22" y2="17" />
+              <line x1="17" y1="7" x2="22" y2="7" />
+            </svg>
+          </div>
+          <h3 className="text-[16px] font-bold text-[#F8FAFC]">Nenhum projeto encontrado</h3>
+          <p className="text-[13px] text-[#A8B0C0] max-w-sm">
+            Crie seu primeiro projeto para subir versões de vídeo e coletar comentários por timecode.
+          </p>
+          <Link
+            to="/projetos"
+            className="mt-2 px-4 py-2 bg-[#8B5CF6]/15 hover:bg-[#8B5CF6]/25 text-[#A78BFA] border border-[#8B5CF6]/30 hover:border-[#8B5CF6]/50 rounded-[10px] text-[13px] font-semibold transition-all cursor-pointer"
+          >
+            Ir para Projetos
+          </Link>
+        </div>
       ) : filteredComentarios.length === 0 ? (
         <div className="bg-[#1A1D24] border border-[#2E3440] rounded-[16px] p-12 text-center flex flex-col items-center gap-3">
           <div className="w-12 h-12 rounded-full bg-[#242832] flex items-center justify-center text-[#A8B0C0] text-xl">

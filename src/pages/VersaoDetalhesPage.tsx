@@ -300,8 +300,8 @@ export function VersaoDetalhesPage() {
                 <div className="w-10 h-10 rounded-full bg-[#242832] flex items-center justify-center text-[#A8B0C0]">
                   💬
                 </div>
-                <p className="text-[13px] font-semibold text-[#E2E5EA]">
-                  Nenhum comentário nesta versão
+                <p className="text-[14px] font-bold text-[#F8FAFC]">
+                  Nenhum comentário encontrado
                 </p>
                 <p className="text-[11px] text-[#A8B0C0] max-w-xs">
                   Os feedbacks deixados pelo cliente no Magic Link ou anotações que você criar aparecerão aqui ordenados pelo timecode.

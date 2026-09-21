@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { useCliente } from '../../hooks/useClientes.ts'
 import { useProjetos } from '../../hooks/useProjetos.ts'
 import { useToast } from '../../context/useToast.ts'
-import { SHOWCASE_CLIENTS } from '../../data/showcaseClients.ts'
 import { formatRelativeTime } from '../../utils/date.ts'
 
 interface ClienteDetalhesDrawerProps {
@@ -40,6 +39,9 @@ function formatPhoneNumber(phone?: string): string {
   if (cleaned.length === 13 && cleaned.startsWith('55')) {
     return `+55 (${cleaned.slice(2, 4)}) ${cleaned.slice(4, 9)}-${cleaned.slice(9)}`
   }
+  if (cleaned.length === 12 && cleaned.startsWith('55')) {
+    return `+55 (${cleaned.slice(2, 4)}) ${cleaned.slice(4, 8)}-${cleaned.slice(8)}`
+  }
   if (cleaned.length === 11) {
     return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`
   }
@@ -52,47 +54,42 @@ function formatPhoneNumber(phone?: string): string {
 function getWhatsAppUrl(phone?: string): string | null {
   if (!phone) return null
   const cleaned = phone.replace(/\D/g, '')
-  if (!cleaned) return null
+  if (!cleaned || cleaned.length < 8) return null
   const fullNumber = cleaned.startsWith('55') ? cleaned : `55${cleaned}`
   return `https://wa.me/${fullNumber}`
 }
 
-export function ClienteDetalhesDrawer({ clienteId, onClose }: ClienteDetalhesDrawerProps) {
-  const isShowcase = Boolean(clienteId?.startsWith('showcase-'))
+function getInitials(name?: string): string {
+  if (!name) return 'CL'
+  return (
+    name
+      .split(' ')
+      .map((part) => part[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join('')
+      .toUpperCase() || 'CL'
+  )
+}
 
-  // Only query backend for non-showcase UUIDs
+export function ClienteDetalhesDrawer({ clienteId, onClose }: ClienteDetalhesDrawerProps) {
   const {
     data: realCliente,
-    isLoading: isLoadingReal,
-    isError: isErrorReal,
-  } = useCliente(!isShowcase && clienteId ? clienteId : undefined)
+    isLoading,
+    isError,
+  } = useCliente(clienteId || undefined)
 
   const { data: allProjetos } = useProjetos()
   const toast = useToast()
   const [copiedField, setCopiedField] = useState<string | null>(null)
 
-  // Find showcase client if ID is showcase
-  const showcaseClient = useMemo(() => {
-    if (!clienteId || !isShowcase) return null
-    return SHOWCASE_CLIENTS.find((c) => c.id === clienteId) || null
-  }, [clienteId, isShowcase])
+  const cliente = realCliente || null
 
-  // Resolve client data from real API or showcase fallback
-  const cliente = useMemo(() => {
-    if (isShowcase) {
-      if (!showcaseClient) return null
-      return {
-        id: showcaseClient.id,
-        nome: showcaseClient.nome,
-        email: showcaseClient.email,
-        telefone: showcaseClient.telefone,
-      }
-    }
-    return realCliente || null
-  }, [isShowcase, showcaseClient, realCliente])
-
-  const isLoading = !isShowcase && isLoadingReal
-  const isError = !isShowcase && (isErrorReal || (!isLoadingReal && !realCliente))
+  // Related projects: from real projects
+  const projetosDoCliente = useMemo(() => {
+    if (!allProjetos || !clienteId) return []
+    return allProjetos.filter((p) => p.cliente?.id === clienteId)
+  }, [allProjetos, clienteId])
 
   // Escape key closes modal
   useEffect(() => {
@@ -105,8 +102,6 @@ export function ClienteDetalhesDrawer({ clienteId, onClose }: ClienteDetalhesDra
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [clienteId, onClose])
 
-  if (!clienteId) return null
-
   const handleCopy = async (text: string, fieldName: string) => {
     try {
       await navigator.clipboard.writeText(text)
@@ -118,11 +113,7 @@ export function ClienteDetalhesDrawer({ clienteId, onClose }: ClienteDetalhesDra
     }
   }
 
-  // Related projects: from real projects or showcase
-  const projetosDoCliente =
-    !isShowcase && allProjetos
-      ? allProjetos.filter((p) => p.cliente?.id === clienteId)
-      : showcaseClient?.projetos || []
+  if (!clienteId) return null
 
   const whatsAppUrl = getWhatsAppUrl(cliente?.telefone)
 
@@ -155,7 +146,7 @@ export function ClienteDetalhesDrawer({ clienteId, onClose }: ClienteDetalhesDra
           ) : (
             <div className="flex items-center gap-4 min-w-0">
               <div className="w-14 h-14 rounded-[14px] bg-gradient-to-br from-[#8B5CF6] to-[#6366F1] text-white flex items-center justify-center font-bold text-[18px] shadow-lg shadow-purple-900/30 shrink-0">
-                {cliente?.nome ? cliente.nome.slice(0, 2).toUpperCase() : 'CL'}
+                {getInitials(cliente?.nome)}
               </div>
 
               <div className="flex flex-col min-w-0">
@@ -215,8 +206,8 @@ export function ClienteDetalhesDrawer({ clienteId, onClose }: ClienteDetalhesDra
                 <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
             </div>
-            <p className="text-[14px] text-[#F8FAFC] font-semibold">Cliente não encontrado</p>
-            <p className="text-[12px] text-[#A8B0C0]">Não foi possível carregar as informações.</p>
+            <p className="text-[14px] text-[#F8FAFC] font-semibold">Nenhum cliente encontrado</p>
+            <p className="text-[12px] text-[#A8B0C0]">Não foi possível carregar as informações do cliente.</p>
           </div>
         ) : (
           <div className="flex flex-col gap-6">
@@ -306,8 +297,9 @@ export function ClienteDetalhesDrawer({ clienteId, onClose }: ClienteDetalhesDra
               </div>
 
               {projetosDoCliente.length === 0 ? (
-                <div className="bg-[#12151C] border border-[#2E3440]/60 rounded-[14px] p-6 text-center flex flex-col items-center gap-2 text-[13px] text-[#A8B0C0]">
-                  <span>Nenhum projeto cadastrado para este cliente ainda.</span>
+                <div className="bg-[#12151C] border border-[#2E3440]/60 rounded-[14px] p-6 text-center flex flex-col items-center gap-1.5 text-[13px] text-[#A8B0C0]">
+                  <span className="font-semibold text-[#F8FAFC]">Nenhum projeto encontrado</span>
+                  <span className="text-[12px] text-[#788194]">Nenhum projeto vinculado a este cliente ainda.</span>
                 </div>
               ) : (
                 <div className="flex flex-col gap-2.5 max-h-[260px] overflow-y-auto pr-1">

@@ -4,7 +4,6 @@ import { useClientes } from '../hooks/useClientes.ts'
 import { useProjetos } from '../hooks/useProjetos.ts'
 import { NovoClienteModal } from '../components/NovoClienteModal.tsx'
 import { ClienteDetalhesDrawer } from '../components/shared/ClienteDetalhesDrawer.tsx'
-import { SHOWCASE_CLIENTS } from '../data/showcaseClients.ts'
 import { formatRelativeTime, formatYear } from '../utils/date.ts'
 
 interface ClientRowItem {
@@ -57,7 +56,7 @@ export function ClientesPage() {
     }
   }
 
-  // Map real clients with project counts or fallback to design showcase
+  // Map real clients with project counts
   const clientList = useMemo<ClientRowItem[]>(() => {
     if (realClientes && realClientes.length > 0) {
       return realClientes.map((c, idx) => {
@@ -92,7 +91,7 @@ export function ClientesPage() {
       })
     }
 
-    return SHOWCASE_CLIENTS
+    return []
   }, [realClientes, realProjetos])
 
   // Filter clients by search term
@@ -178,20 +177,22 @@ export function ClientesPage() {
       {/* Clients Table Container: 1104px x 586px, bg: #1A1D24, rounded: 16px */}
       <div className="w-full bg-[#1A1D24] border border-[#343946]/30 rounded-[16px] p-6 shadow-md overflow-x-auto">
         {/* Table Headers */}
-        <div className="grid grid-cols-12 gap-4 pb-4 border-b border-[#343946]/50 min-w-[760px]">
-          <div className="col-span-4 text-[11px] leading-[13px] font-semibold text-[#788194] tracking-wider uppercase pl-2">
-            CLIENTE
+        {!isLoading && filteredClients.length > 0 && (
+          <div className="grid grid-cols-12 gap-4 pb-4 border-b border-[#343946]/50 min-w-[760px]">
+            <div className="col-span-4 text-[11px] leading-[13px] font-semibold text-[#788194] tracking-wider uppercase pl-2">
+              CLIENTE
+            </div>
+            <div className="col-span-4 text-[11px] leading-[13px] font-semibold text-[#788194] tracking-wider uppercase">
+              CONTATO
+            </div>
+            <div className="col-span-2 text-[11px] leading-[13px] font-semibold text-[#788194] tracking-wider uppercase">
+              PROJETOS
+            </div>
+            <div className="col-span-2 text-[11px] leading-[13px] font-semibold text-[#788194] tracking-wider uppercase flex items-center justify-between pr-2">
+              <span>ÚLTIMA ATIVIDADE</span>
+            </div>
           </div>
-          <div className="col-span-4 text-[11px] leading-[13px] font-semibold text-[#788194] tracking-wider uppercase">
-            CONTATO
-          </div>
-          <div className="col-span-2 text-[11px] leading-[13px] font-semibold text-[#788194] tracking-wider uppercase">
-            PROJETOS
-          </div>
-          <div className="col-span-2 text-[11px] leading-[13px] font-semibold text-[#788194] tracking-wider uppercase flex items-center justify-between pr-2">
-            <span>ÚLTIMA ATIVIDADE</span>
-          </div>
-        </div>
+        )}
 
         {/* Loading State */}
         {isLoading && (
@@ -201,15 +202,49 @@ export function ClientesPage() {
           </div>
         )}
 
-        {/* Empty Search Result */}
+        {/* Empty State */}
         {!isLoading && filteredClients.length === 0 && (
-          <div className="py-16 text-center text-[#788194] text-[13px]">
-            Nenhum cliente encontrado para "{searchTerm}".
+          <div className="py-16 text-center flex flex-col items-center justify-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-[#242832] flex items-center justify-center text-[#788194]">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-[16px] font-bold text-[#F8FAFC]">
+                Nenhum cliente encontrado
+              </h3>
+              <p className="text-[13px] text-[#788194] mt-1">
+                {searchTerm
+                  ? `Não há clientes correspondentes à pesquisa "${searchTerm}".`
+                  : 'Cadastre seu primeiro cliente para organizar projetos e contatos.'}
+              </p>
+            </div>
+            {searchTerm ? (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="mt-1 px-3.5 py-1.5 bg-[#242832] hover:bg-[#2E3440] text-[#E2E5EA] rounded-[8px] text-[12px] font-semibold transition-all cursor-pointer"
+              >
+                Limpar busca
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(true)}
+                className="mt-1 px-4 py-2 bg-[#8B5CF6]/15 hover:bg-[#8B5CF6]/25 text-[#A78BFA] border border-[#8B5CF6]/30 hover:border-[#8B5CF6]/50 rounded-[10px] text-[13px] font-semibold transition-all cursor-pointer"
+              >
+                + Cadastrar primeiro cliente
+              </button>
+            )}
           </div>
         )}
 
         {/* Clients List Rows */}
-        {!isLoading && (
+        {!isLoading && filteredClients.length > 0 && (
           <div className="flex flex-col min-w-[760px]">
             {filteredClients.map((client, index) => {
               const isLast = index === filteredClients.length - 1
