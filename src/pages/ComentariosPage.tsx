@@ -95,34 +95,38 @@ export function ComentariosPage() {
 
       {/* Quando não há projetos cadastrados */}
       {isProjetosLoading ? (
-        <div className="py-20 flex flex-col items-center justify-center gap-3 text-[#A8B0C0]">
-          <div className="w-8 h-8 border-2 border-[#8B5CF6] border-t-transparent rounded-full animate-spin" />
-          <span className="text-sm">Carregando projetos...</span>
+        <div className="py-16 flex flex-col items-center justify-center gap-3 text-[#A8B0C0]">
+          <div className="w-6 h-6 border-2 border-[#8B5CF6] border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs">Carregando projetos...</span>
         </div>
       ) : !projetos || projetos.length === 0 ? (
-        <div className="bg-[#1A1D24] border border-[#2E3440] rounded-[16px] p-12 text-center flex flex-col items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-[#242832] flex items-center justify-center text-[#788194]">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
-              <line x1="7" y1="2" x2="7" y2="22" />
-              <line x1="17" y1="2" x2="17" y2="22" />
-              <line x1="2" y1="12" x2="22" y2="12" />
-              <line x1="2" y1="7" x2="7" y2="7" />
-              <line x1="2" y1="17" x2="7" y2="17" />
-              <line x1="17" y1="17" x2="22" y2="17" />
-              <line x1="17" y1="7" x2="22" y2="7" />
-            </svg>
+        <div className="bg-[#1A1D24] border border-[#2E3440] rounded-[16px] p-5 sm:p-6 shadow-sm">
+          <div className="py-16 text-center flex flex-col items-center justify-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-[#242832] flex items-center justify-center text-[#788194]">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
+                <line x1="7" y1="2" x2="7" y2="22" />
+                <line x1="17" y1="2" x2="17" y2="22" />
+                <line x1="2" y1="12" x2="22" y2="12" />
+                <line x1="2" y1="7" x2="7" y2="7" />
+                <line x1="2" y1="17" x2="7" y2="17" />
+                <line x1="17" y1="17" x2="22" y2="17" />
+                <line x1="17" y1="7" x2="22" y2="7" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-[16px] font-bold text-[#F8FAFC]">Nenhum projeto encontrado</h3>
+              <p className="text-[13px] text-[#788194] mt-1">
+                Crie seu primeiro projeto para subir versões de vídeo e coletar comentários por timecode.
+              </p>
+            </div>
+            <Link
+              to="/projetos"
+              className="mt-1 px-4 py-2 bg-[#8B5CF6]/15 hover:bg-[#8B5CF6]/25 text-[#A78BFA] border border-[#8B5CF6]/30 hover:border-[#8B5CF6]/50 rounded-[10px] text-[13px] font-semibold transition-all cursor-pointer"
+            >
+              + Ir para Projetos
+            </Link>
           </div>
-          <h3 className="text-[16px] font-bold text-[#F8FAFC]">Nenhum projeto encontrado</h3>
-          <p className="text-[13px] text-[#A8B0C0] max-w-sm">
-            Crie seu primeiro projeto para subir versões de vídeo e coletar comentários por timecode.
-          </p>
-          <Link
-            to="/projetos"
-            className="mt-2 px-4 py-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-[10px] text-[13px] font-semibold transition-all shadow-md cursor-pointer"
-          >
-            Ir para Projetos
-          </Link>
         </div>
       ) : (
         <>
@@ -231,35 +235,56 @@ export function ComentariosPage() {
               ))}
             </div>
           ) : !versoes || versoes.length === 0 ? (
-            <div className="bg-[#1A1D24] border border-[#2E3440] rounded-[16px] p-12 text-center flex flex-col items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-[#242832] flex items-center justify-center text-[#788194]">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="23 7 16 12 23 17 23 7" />
-                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-                </svg>
+            <div className="bg-[#1A1D24] border border-[#2E3440] rounded-[16px] p-5 sm:p-6 shadow-sm">
+              <div className="py-16 text-center flex flex-col items-center justify-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-[#242832] flex items-center justify-center text-[#788194]">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="23 7 16 12 23 17 23 7" />
+                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-[16px] font-bold text-[#F8FAFC]">Nenhuma versão cadastrada</h3>
+                  <p className="text-[13px] text-[#788194] mt-1">
+                    Este projeto ainda não possui nenhuma versão de vídeo cadastrada para receber comentários.
+                  </p>
+                </div>
+                {activeProjetoId && (
+                  <Link
+                    to={`/projetos/${activeProjetoId}`}
+                    className="mt-1 px-4 py-2 bg-[#8B5CF6]/15 hover:bg-[#8B5CF6]/25 text-[#A78BFA] border border-[#8B5CF6]/30 hover:border-[#8B5CF6]/50 rounded-[10px] text-[13px] font-semibold transition-all cursor-pointer"
+                  >
+                    Abrir projeto para adicionar versão →
+                  </Link>
+                )}
               </div>
-              <h3 className="text-[16px] font-bold text-[#F8FAFC]">Nenhuma versão cadastrada</h3>
-              <p className="text-[13px] text-[#A8B0C0] max-w-sm">
-                Este projeto ainda não possui nenhuma versão de vídeo cadastrada para receber comentários.
-              </p>
-              <Link
-                to={`/projetos/${activeProjetoId}`}
-                className="mt-2 px-4 py-2 bg-[#8B5CF6]/15 hover:bg-[#8B5CF6]/25 text-[#A78BFA] border border-[#8B5CF6]/30 hover:border-[#8B5CF6]/50 rounded-[10px] text-[13px] font-semibold transition-all cursor-pointer"
-              >
-                Abrir projeto para adicionar versão →
-              </Link>
             </div>
           ) : filteredComentarios.length === 0 ? (
-            <div className="bg-[#1A1D24] border border-[#2E3440] rounded-[16px] p-12 text-center flex flex-col items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-[#242832] flex items-center justify-center text-[#A8B0C0] text-xl">
-                💬
+            <div className="bg-[#1A1D24] border border-[#2E3440] rounded-[16px] p-5 sm:p-6 shadow-sm">
+              <div className="py-16 text-center flex flex-col items-center justify-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-[#242832] flex items-center justify-center text-[#788194]">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-[16px] font-bold text-[#F8FAFC]">Nenhum comentário encontrado</h3>
+                  <p className="text-[13px] text-[#788194] mt-1">
+                    {searchTerm
+                      ? `Não há comentários correspondentes à pesquisa "${searchTerm}".`
+                      : 'Esta versão ainda não possui anotações de clientes ou profissionais.'}
+                  </p>
+                </div>
+                {searchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchTerm('')}
+                    className="mt-1 px-3.5 py-1.5 bg-[#242832] hover:bg-[#2E3440] text-[#E2E5EA] rounded-[8px] text-[12px] font-semibold transition-all cursor-pointer"
+                  >
+                    Limpar busca
+                  </button>
+                )}
               </div>
-              <h3 className="text-[16px] font-bold text-[#F8FAFC]">Nenhum comentário encontrado</h3>
-              <p className="text-[13px] text-[#A8B0C0] max-w-sm">
-                {searchTerm
-                  ? `Não há comentários contendo "${searchTerm}". Tente outra busca.`
-                  : 'Esta versão ainda não possui anotações de clientes ou profissionais.'}
-              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -505,13 +505,20 @@ export function ClientPortalPage() {
               </div>
 
               {filteredComments.length === 0 ? (
-                <div className="py-8 px-4 text-center flex flex-col items-center justify-center gap-1.5 bg-[#151820]/60 rounded-[12px] border border-dashed border-[#343946]/50">
-                  <p className="text-[14px] font-semibold text-[#F8FAFC]">
-                    Nenhum comentário encontrado
-                  </p>
-                  <p className="text-[12px] text-[#A8B0C0]">
-                    Pause o vídeo em qualquer ponto e clique em &quot;Adicionar feedback&quot; para registrar marcações na timeline.
-                  </p>
+                <div className="py-12 text-center flex flex-col items-center justify-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-[#242832] flex items-center justify-center text-[#788194]">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-[16px] font-bold text-[#F8FAFC]">
+                      Nenhum comentário encontrado
+                    </h3>
+                    <p className="text-[13px] text-[#788194] mt-1 max-w-sm mx-auto">
+                      Pause o vídeo em qualquer ponto e clique em &quot;Adicionar feedback&quot; para registrar marcações na timeline.
+                    </p>
+                  </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">

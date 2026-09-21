@@ -296,16 +296,20 @@ export function VersaoDetalhesPage() {
                 </button>
               </div>
             ) : !comentarios || comentarios.length === 0 ? (
-              <div className="py-12 text-center flex flex-col items-center justify-center gap-2 bg-[#12151C]/40 rounded-[12px] border border-dashed border-[#2E3440]">
-                <div className="w-10 h-10 rounded-full bg-[#242832] flex items-center justify-center text-[#A8B0C0]">
-                  💬
+              <div className="py-12 text-center flex flex-col items-center justify-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-[#242832] flex items-center justify-center text-[#788194]">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
                 </div>
-                <p className="text-[14px] font-bold text-[#F8FAFC]">
-                  Nenhum comentário encontrado
-                </p>
-                <p className="text-[11px] text-[#A8B0C0] max-w-xs">
-                  Os feedbacks deixados pelo cliente no Magic Link ou anotações que você criar aparecerão aqui ordenados pelo timecode.
-                </p>
+                <div>
+                  <h3 className="text-[16px] font-bold text-[#F8FAFC]">
+                    Nenhum comentário encontrado
+                  </h3>
+                  <p className="text-[13px] text-[#788194] mt-1 max-w-xs mx-auto">
+                    Os feedbacks deixados pelo cliente no Magic Link ou anotações que você criar aparecerão aqui ordenados pelo timecode.
+                  </p>
+                </div>
               </div>
             ) : (
               comentarios.map((c) => {
