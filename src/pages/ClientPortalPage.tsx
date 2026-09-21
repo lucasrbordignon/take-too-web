@@ -51,6 +51,10 @@ export function ClientPortalPage() {
 
   // Captura e armazena o token do cliente vindo da query string do magic link (?token=...)
   const tokenFromUrl = searchParams.get('token')
+  if (tokenFromUrl && getClientToken() !== tokenFromUrl) {
+    setClientToken(tokenFromUrl)
+  }
+
   useEffect(() => {
     if (tokenFromUrl) {
       setClientToken(tokenFromUrl)
@@ -60,8 +64,8 @@ export function ClientPortalPage() {
   const hasToken = !!(tokenFromUrl || getClientToken())
 
   // Usa as rotas específicas do portal do cliente (/api/portal/**) com ROLE_CLIENTE
-  const { data: realProjeto, isError: isPortalError } = usePortalProjeto(id)
-  const { data: realVersoes } = usePortalVersoes(id)
+  const { data: realProjeto, isError: isPortalError, isLoading: isPortalLoading } = usePortalProjeto(id)
+  const { data: realVersoes, isLoading: isVersoesLoading } = usePortalVersoes(id)
 
   const [currentTime, setCurrentTime] = useState(0) // Inicia no segundo 00:00
   const [seekRequest, setSeekRequest] = useState<{ time: number; id: number } | undefined>()
@@ -75,9 +79,8 @@ export function ClientPortalPage() {
   const [decisionStatus, setDecisionStatus] = useState<'IDLE' | 'APROVADO' | 'AJUSTES'>('IDLE')
   const [isSubmittingDecision, setIsSubmittingDecision] = useState(false)
 
-
   // Project data
-  const projetoNome = realProjeto?.nome || 'Campanha Aurora'
+  const projetoNome = realProjeto?.nome || (id === 'demo' ? 'Campanha Aurora' : 'Projeto')
   const activeVersao = useMemo(() => {
     if (realVersoes && realVersoes.length > 0) {
       return realVersoes[realVersoes.length - 1]
@@ -95,7 +98,7 @@ export function ClientPortalPage() {
 
   const versaoLabel = activeVersao?.numero
     ? `V${activeVersao.numero} · CORTE PRELIMINAR`
-    : 'V2 · CORTE PRELIMINAR'
+    : (id === 'demo' ? 'V1 · CORTE PRELIMINAR' : 'SEM VERSÕES')
 
   const isApprovedOrDelivered = useMemo(() => {
     if (decisionStatus === 'APROVADO') return true
@@ -202,6 +205,18 @@ export function ClientPortalPage() {
       setDecisionStatus(decision)
       setIsSubmittingDecision(false)
     }
+  }
+
+  // Tela de loading enquanto busca os dados do portal
+  if ((isPortalLoading || isVersoesLoading) && id && id !== 'demo') {
+    return (
+      <div className="min-h-screen bg-[#0F1117] text-[#F8FAFC] flex flex-col font-sans select-none items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-[#A8B0C0]">
+          <div className="w-8 h-8 border-2 border-[#8B5CF6] border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm">Carregando portal do cliente...</span>
+        </div>
+      </div>
+    )
   }
 
   // Tela amigável quando o link estiver revogado, expirado ou inválido (403/404)
@@ -332,7 +347,7 @@ export function ClientPortalPage() {
                 />
               ) : (
                 <span className="font-bold text-[28px] leading-normal text-[#A78BFA] tracking-wider drop-shadow-md">
-                  AURORA
+                  {projetoNome}
                 </span>
               )}
 
@@ -423,7 +438,7 @@ export function ClientPortalPage() {
 
             <VideoPlayer
               src={activeVersao?.arquivoUrl}
-              fallbackTitle="AURORA"
+              fallbackTitle={projetoNome}
               currentTime={currentTime}
               totalDuration={totalDuration}
               seekRequest={seekRequest}

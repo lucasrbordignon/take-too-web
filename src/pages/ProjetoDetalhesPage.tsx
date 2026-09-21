@@ -296,7 +296,16 @@ export function ProjetoDetalhesPage() {
     return []
   }, [realVersoes])
 
-  if (!isLoadingProjeto && (!realProjeto || isErrorProjeto)) {
+  if (isLoadingProjeto) {
+    return (
+      <div className="w-full py-20 flex flex-col items-center justify-center gap-3 text-[#A8B0C0]">
+        <div className="w-8 h-8 border-2 border-[#8B5CF6] border-t-transparent rounded-full animate-spin" />
+        <span className="text-sm">Carregando detalhes do projeto...</span>
+      </div>
+    )
+  }
+
+  if (!realProjeto || isErrorProjeto) {
     return (
       <div className="w-full py-16 flex flex-col items-center justify-center text-center gap-4">
         <div className="w-14 h-14 rounded-full bg-[#242832] flex items-center justify-center text-[#788194]">

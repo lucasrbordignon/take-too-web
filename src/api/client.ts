@@ -56,7 +56,17 @@ export const removeClientToken = () => {
 apiClient.interceptors.request.use(
   (config) => {
     const isPortalRoute = config.url?.startsWith('/api/portal')
-    const token = isPortalRoute ? getClientToken() : getStoredToken()
+    let token = isPortalRoute ? getClientToken() : getStoredToken()
+
+    // Se for rota do portal e o token ainda não estiver no storage, extrai da query string da URL atual
+    if (isPortalRoute && !token && typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      const tokenFromUrl = urlParams.get('token')
+      if (tokenFromUrl) {
+        setClientToken(tokenFromUrl)
+        token = tokenFromUrl
+      }
+    }
 
     if (token && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${token}`
