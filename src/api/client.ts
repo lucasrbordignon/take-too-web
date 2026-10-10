@@ -1,6 +1,6 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios'
 
-// Se VITE_API_URL estiver definido usa a URL externa; caso contrário, usa vazio para usufruir do proxy do Vite (/api -> localhost:8080) sem bloqueio de CORS
+// Se VITE_API_URL estiver definido usa a URL externa; caso contrário, usa vazio para usufruir do proxy do Vite (/api -> localhost:8082) sem bloqueio de CORS
 const API_BASE_URL = import.meta.env.VITE_API_URL || ''
 
 export const apiClient = axios.create({

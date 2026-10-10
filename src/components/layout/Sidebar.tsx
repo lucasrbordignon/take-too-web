@@ -30,6 +30,11 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
       to: '/comentarios',
       isActive: location.pathname.startsWith('/comentarios'),
     },
+    {
+      label: 'Vídeos',
+      to: '/videos',
+      isActive: location.pathname.startsWith('/videos'),
+    },
   ]
 
   // Initials for avatar

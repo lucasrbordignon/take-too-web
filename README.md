@@ -165,7 +165,7 @@ A aplicação consome 19 endpoints REST expostos pelo backend Spring Boot (`take
 ### Pré-requisitos
 - [Node.js](https://nodejs.org/) versão `20.x` ou superior
 - Gerenciador de pacotes `npm` ou `pnpm`
-- Backend `take-too` rodando em `http://localhost:8080` (opcional: a aplicação possui modo showcase integrado para navegação visual)
+- Backend `take-too` rodando em `http://localhost:8082` (opcional: a aplicação possui modo showcase integrado para navegação visual)
 
 ### 1. Clonar o repositório e entrar no diretório
 ```bash
@@ -179,9 +179,9 @@ npm install
 ```
 
 ### 3. Configurar variáveis de ambiente (Opcional)
-Crie um arquivo `.env` na raiz do projeto caso deseje apontar para uma URL externa do backend (por padrão, o Vite faz proxy de `/api` para `localhost:8080`):
+Crie um arquivo `.env` na raiz do projeto caso deseje apontar para uma URL externa do backend (por padrão, o Vite faz proxy de `/api` para `localhost:8082`):
 ```env
-VITE_API_URL=http://localhost:8080
+VITE_API_URL=http://localhost:8082
 ```
 
 ### 4. Iniciar o servidor de desenvolvimento

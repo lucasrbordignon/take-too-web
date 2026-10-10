@@ -2,6 +2,10 @@ import { useHealthCheck } from '../hooks/useHealth.ts'
 
 export function HealthCheckBadge() {
   const { data, isError, isLoading, isFetching, refetch } = useHealthCheck()
+  const configuredApi = import.meta.env.VITE_API_URL || 'http://localhost:8082'
+  const apiLabel = (() => {
+    try { return new URL(configuredApi).port || new URL(configuredApi).host } catch { return configuredApi }
+  })()
 
   return (
     <div className="flex items-center gap-2 bg-bg-surface/80 backdrop-blur px-3 py-1.5 rounded-full border border-border-subtle/50 text-xs shadow-md">
@@ -13,7 +17,7 @@ export function HealthCheckBadge() {
       ) : isError ? (
         <>
           <span className="w-2 h-2 rounded-full bg-status-danger" />
-          <span className="text-status-danger font-medium text-[11px]">API Offline (8080)</span>
+          <span className="text-status-danger font-medium text-[11px]">API Offline ({apiLabel})</span>
           <button
             onClick={() => refetch()}
             title="Tentar reconectar"

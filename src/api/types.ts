@@ -139,4 +139,75 @@ export interface DashboardMetricasDTO {
   projetosRecentes: ProjetoDTO[]
 }
 
+export type StatusVideo =
+  | 'CRIANDO_UPLOAD'
+  | 'AGUARDANDO_UPLOAD'
+  | 'PROCESSANDO'
+  | 'PRONTO'
+  | 'ERRO'
+  | 'CANCELADO'
+  | 'EXCLUIDO'
+
+export type PosicaoMarcaDagua =
+  | 'SUPERIOR_ESQUERDA'
+  | 'SUPERIOR_DIREITA'
+  | 'INFERIOR_ESQUERDA'
+  | 'INFERIOR_DIREITA'
+  | 'CENTRO'
+
+export interface MarcaDaguaDTO {
+  imagemUrl: string
+  posicao: PosicaoMarcaDagua
+  larguraPercentual: number
+  opacidadePercentual: number
+  margemPercentual: number
+}
+
+export interface VideoDTO {
+  id: string
+  nome: string
+  status: StatusVideo
+  duracaoSegundos: number | null
+  largura: number | null
+  altura: number | null
+  proporcao: string | null
+  orientacao: string | null
+  marcaDagua: MarcaDaguaDTO | null
+  erro: string | null
+  criadoEm: string
+  atualizadoEm: string
+}
+
+export interface VideoUploadCreateDTO {
+  nome: string
+  origem: string
+  marcaDagua?: MarcaDaguaDTO
+}
+
+export interface VideoUploadDTO {
+  video: VideoDTO
+  url: string
+  metodo: string
+  protocolo: string
+  headers: Record<string, string>
+  expiraEm: string
+}
+
+export interface VideoPlaybackDTO {
+  video: VideoDTO
+  url: string
+  tipo: string
+  expiraEm: string
+}
+
+export interface VideoPageDTO {
+  content: VideoDTO[]
+  totalPages: number
+  totalElements: number
+  size: number
+  number: number
+  first: boolean
+  last: boolean
+}
+
 

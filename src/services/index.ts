@@ -6,5 +6,6 @@ export * from './versoes.service.ts'
 export * from './comentarios.service.ts'
 export * from './portal.service.ts'
 export * from './health.service.ts'
+export * from './videos.service.ts'
 export * from './dashboard.service.ts'
 
