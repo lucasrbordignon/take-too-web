@@ -1,9 +1,10 @@
+import { versaoMaisRecente } from '../utils/versoes.ts'
 import { useState, useMemo } from 'react'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { useProjeto } from '../hooks/useProjetos.ts'
 import { useVersoes } from '../hooks/useVersoes.ts'
 import { useComentarios, useCriarComentario } from '../hooks/useComentarios.ts'
-import { VideoPlayer } from '../components/shared/VideoPlayer.tsx'
+import { VersionVideoPlayer } from '../components/VersionVideoPlayer.tsx'
 import { useToast } from '../context/useToast.ts'
 import { authService } from '../services/auth.service.ts'
 
@@ -42,7 +43,7 @@ export function VersaoDetalhesPage() {
   // Encontra a versão ativa pelo versaoId ou fallback para a última
   const versaoAtiva = useMemo(() => {
     if (!versoes || versoes.length === 0) return null
-    return versoes.find((v) => v.id === versaoId) || versoes[versoes.length - 1]
+    return versoes.find((v) => v.id === versaoId) || versaoMaisRecente(versoes)
   }, [versoes, versaoId])
 
   const formatTimecode = (seconds: number) => {
@@ -187,8 +188,9 @@ export function VersaoDetalhesPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column: Pro Video Player (col-span-8) */}
         <div className="lg:col-span-8 flex flex-col gap-4">
-          <VideoPlayer
-            src={versaoAtiva?.arquivoUrl}
+          <VersionVideoPlayer
+            versao={versaoAtiva}
+            projetoId={projetoId}
             fallbackTitle={projeto?.nome || 'VÍDEO DE REVISÃO'}
             markers={videoMarkers}
             currentTime={currentTime}

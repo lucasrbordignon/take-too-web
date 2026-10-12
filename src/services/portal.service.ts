@@ -5,9 +5,14 @@ import type {
   ProjetoDTO,
   StatusVersaoUpdateDTO,
   VersaoDTO,
+  VideoPlaybackDTO,
 } from '../api/types.ts'
 
 export const portalService = {
+  async criarPlayback(versaoId: string): Promise<VideoPlaybackDTO> {
+    return (await apiClient.post<VideoPlaybackDTO>(`/api/portal/versoes/${versaoId}/playback`)).data
+  },
+
   async buscarProjeto(projetoId: string): Promise<ProjetoDTO> {
     const response = await apiClient.get<ProjetoDTO>(`/api/portal/projetos/${projetoId}`)
     return response.data

@@ -1,3 +1,4 @@
+import { versaoMaisRecente } from '../utils/versoes.ts'
 import { useState, useMemo, useEffect } from 'react'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
 import {
@@ -8,7 +9,7 @@ import {
   usePortalAlterarStatusVersao,
 } from '../hooks/usePortal.ts'
 import { setClientToken, getClientToken } from '../api/client.ts'
-import { VideoPlayer } from '../components/shared/VideoPlayer.tsx'
+import { VersionVideoPlayer } from '../components/VersionVideoPlayer.tsx'
 import { resolveVideoSource } from '../lib/videoSource.ts'
 
 interface CommentItem {
@@ -78,17 +79,18 @@ export function ClientPortalPage() {
   const [feedbackText, setFeedbackText] = useState('')
   const [decisionStatus, setDecisionStatus] = useState<'IDLE' | 'APROVADO' | 'AJUSTES'>('IDLE')
   const [isSubmittingDecision, setIsSubmittingDecision] = useState(false)
+  const [decisionError, setDecisionError] = useState<string | null>(null)
 
   // Project data
   const projetoNome = realProjeto?.nome || (id === 'demo' ? 'Campanha Aurora' : 'Projeto')
   const activeVersao = useMemo(() => {
     if (realVersoes && realVersoes.length > 0) {
-      return realVersoes[realVersoes.length - 1]
+      return versaoMaisRecente(realVersoes)
     }
     return null
   }, [realVersoes])
   const activeVideoSource = useMemo(
-    () => resolveVideoSource(activeVersao?.arquivoUrl),
+    () => resolveVideoSource(activeVersao?.arquivoUrl ?? undefined),
     [activeVersao?.arquivoUrl]
   )
 
@@ -189,6 +191,7 @@ export function ClientPortalPage() {
 
   // Handle Client Decision (Aprovar ou Solicitar Ajustes)
   const handleDecision = (decision: 'APROVADO' | 'AJUSTES') => {
+    setDecisionError(null)
     setIsSubmittingDecision(true)
     if (activeVersao?.id) {
       alterarStatusVersaoMutation(
@@ -197,7 +200,7 @@ export function ClientPortalPage() {
         },
         {
           onSuccess: () => setDecisionStatus(decision),
-          onError: () => setDecisionStatus(decision),
+          onError: () => setDecisionError('Não foi possível registrar a avaliação. Atualize a página e tente novamente.'),
           onSettled: () => setIsSubmittingDecision(false),
         }
       )
@@ -330,6 +333,9 @@ export function ClientPortalPage() {
               </p>
             </div>
 
+            {activeVersao?.videoId ? <VersionVideoPlayer portal versao={activeVersao}
+              initialSeekTime={currentTime} currentTime={currentTime} totalDuration={totalDuration}
+              onTimeUpdate={() => undefined} onDurationChange={setTotalDuration} /> : <>
             {/* Frozen Frame Preview */}
             <div className="w-full aspect-video max-h-[360px] bg-[#111827] border border-[#2E3440]/60 rounded-[14px] relative flex items-center justify-center overflow-hidden shadow-lg">
               {activeVideoSource.type === 'direct' ? (
@@ -358,6 +364,8 @@ export function ClientPortalPage() {
                 </span>
               </div>
             </div>
+
+            </>}
 
             {/* Feedback Input Card */}
             <form onSubmit={handleSaveFeedback} id="feedback-form" className="flex flex-col gap-2.5">
@@ -436,8 +444,9 @@ export function ClientPortalPage() {
               )}
             </div>
 
-            <VideoPlayer
-              src={activeVersao?.arquivoUrl}
+            <VersionVideoPlayer
+              versao={activeVersao}
+              portal
               fallbackTitle={projetoNome}
               currentTime={currentTime}
               totalDuration={totalDuration}
@@ -571,6 +580,7 @@ export function ClientPortalPage() {
               )}
             </div>
 
+            {decisionError && <p role="alert" className="text-sm text-red-300">{decisionError}</p>}
             {/* Decision Bar */}
             <div className="w-full bg-[#151820] border border-[#2E3440]/60 rounded-[16px] p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
               <div className="text-center sm:text-left">

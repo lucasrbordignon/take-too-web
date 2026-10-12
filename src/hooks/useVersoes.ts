@@ -17,7 +17,10 @@ export function useCriarVersao(projetoId?: string) {
   return useMutation({
     mutationFn: (data: VersaoCreateDTO) => versoesService.criar(projetoId!, data),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projetos'] })
       queryClient.invalidateQueries({ queryKey: versoesQueryKey(projetoId) })
+      queryClient.invalidateQueries({ queryKey: ['project-videos', projetoId] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
     },
   })
 }

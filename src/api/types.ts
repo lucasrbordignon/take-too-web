@@ -57,14 +57,15 @@ export interface ProjetoDTO {
   magicLinkAtivo?: boolean
 }
 
-export interface VersaoCreateDTO {
-  arquivoUrl: string
-}
+export type VersaoCreateDTO = { arquivoUrl: string; videoId?: never } | { videoId: string; arquivoUrl?: never }
 
 export interface VersaoDTO {
   id?: string
   numero?: number
-  arquivoUrl?: string
+  arquivoUrl?: string | null
+  tipoMidia?: 'VIDEO' | 'URL_LEGADA'
+  videoId?: string | null
+  video?: Pick<VideoDTO, 'id' | 'status' | 'duracaoSegundos' | 'largura' | 'altura' | 'proporcao' | 'orientacao'> | null
   status?: StatusVersao | string
   criadoEm?: string
 }
@@ -198,6 +199,7 @@ export interface VideoPlaybackDTO {
   url: string
   tipo: string
   expiraEm: string
+  miniaturaUrl?: string | null
 }
 
 export interface VideoPageDTO {

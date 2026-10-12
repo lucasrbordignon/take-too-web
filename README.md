@@ -216,3 +216,38 @@ A interface do TakeToo adota um estilo **dark mode** elegante e imersivo, planej
 ## 📄 Licença
 
 Este projeto está sob a licença [MIT](LICENSE).
+
+
+## Vídeos no projeto — etapa 1
+
+Em um projeto em edição, **Publicar nova versão** oferece envio de arquivo,
+seleção da biblioteca e link externo legado. O envio fica como rascunho
+recuperável ao reabrir o modal; publicar é uma ação separada, habilitada somente
+para vídeos prontos. O player do profissional e o portal usam sessões HLS
+temporárias autorizadas pela versão, mantendo comentários por tempo.
+
+A exclusão pede confirmação e apresenta a mensagem do backend quando o vídeo
+está protegido por uma versão publicada. Publicação atualiza versões, projeto e
+dashboard. Upload usa a origem atual do navegador; configure essa origem no
+CORS e em VIDEO_ALLOWED_ORIGINS do backend.
+
+Requer backend com a migration V7 e rotas de projeto/portal documentadas em
+docs/videos-no-projeto.md no repositório take-too. Playback real requer as
+chaves de signing configuradas no backend; elas nunca vão para o frontend.
+URLs temporárias não são persistidas. O envio atual é um PUT simples, sem
+retomada automática por chunks; rascunho recuperável não significa retomada dos
+bytes após falha de rede.
+
+Verificações: `npm test`, `npm run lint` e `npm run build`.
+
+### Seleção e acompanhamento de vídeos
+
+A publicação mantém a seleção ao trocar de página ou origem. Após enviar um arquivo pelo projeto, ele fica selecionado enquanto processa; publicar continua sendo uma confirmação explícita. O resumo mostra quando está pronto. A biblioteca atualiza os vídeos em processamento com intervalo progressivo, pausa em abas ocultas ou sem conexão e atualiza o cache sem recarregar a lista para cada vídeo. No projeto, somente o vídeo selecionado é reconciliado com o provedor; os rascunhos são consultados a cada 15 segundos enquanto houver envios pendentes.
+
+O modal de publicação oferece apenas envio de arquivo e seleção da biblioteca. Arquivo, prévia, nome e progresso aparecem no próprio modal, sem abrir outra janela. Links externos continuam disponíveis somente nas versões legadas; a criação pela interface usa vídeos da biblioteca.
+
+Cancelar um upload exige dois cliques: “Cancelar envio” e “Confirmar cancelamento”. A confirmação aparece no próprio formulário, com a opção “Continuar envio”.
+
+As origens usam abas com indicador de seleção e navegação por teclado. As miniaturas reais são carregadas somente para cards próximos à área visível, por URL assinada devolvida em `miniaturaUrl` pelo playback. Vídeos verticais preservam o enquadramento. Enquanto processam ou quando a prévia falha, o card mantém um placeholder. Requer backend atualizado e credenciais de signing configuradas.
+
+O histórico do projeto mostra versões em ordem numérica decrescente (Vn → V1). Portal e comentários escolhem a versão de maior número independentemente da ordem devolvida pela API. Se o playback responder 503 com signing ausente, configure as duas variáveis `MUX_SIGNING_KEY_ID` e `MUX_SIGNING_PRIVATE_KEY` no `.env` do backend e execute `docker compose up -d --force-recreate api`; apenas reiniciar não reaplica o ambiente.

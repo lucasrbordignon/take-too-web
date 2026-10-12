@@ -9,6 +9,7 @@ import { MagicLinkModal } from '../components/shared/MagicLinkModal.tsx'
 import { ConfirmRevocationDialog } from '../components/shared/ConfirmRevocationDialog.tsx'
 import { ConfirmStageModal, type StageModalType } from '../components/shared/ConfirmStageModal.tsx'
 import { useToast } from '../context/useToast.ts'
+import { ordenarVersoesRecentes } from '../utils/versoes.ts'
 import { formatRelativeTime } from '../utils/date.ts'
 import type { StatusProjeto } from '../api/types.ts'
 
@@ -272,7 +273,7 @@ export function ProjetoDetalhesPage() {
   // Version list: real versions
   const versionsList = useMemo(() => {
     if (realVersoes && realVersoes.length > 0) {
-      return realVersoes.map((v, idx) => {
+      return ordenarVersoesRecentes(realVersoes).map((v, idx) => {
         const num = v.numero || realVersoes.length - idx
         const isApproved = v.status === 'APROVADA'
         const isRejected = v.status === 'REJEITADA'
@@ -757,7 +758,8 @@ export function ProjetoDetalhesPage() {
       {/* Modal Nova Versao */}
       <NovaVersaoModal
         isOpen={isNovaVersaoOpen}
-        onClose={() => setIsNovaVersaoOpen(false)}
+        onClose={() => { setIsNovaVersaoOpen(false); setLocalEtapa(null) }}
+        emEdicao={realProjeto?.etapaAtual === "EM_EDICAO"}
         projetoId={id || '1'}
         proximaVersao={versionsList.length + 1}
       />

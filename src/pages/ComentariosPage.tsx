@@ -1,3 +1,4 @@
+import { versaoMaisRecente } from '../utils/versoes.ts'
 import { useState, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useProjetos } from '../hooks/useProjetos.ts'
@@ -29,7 +30,7 @@ export function ComentariosPage() {
   const activeVersaoId = useMemo(() => {
     if (selectedVersaoId) return selectedVersaoId
     if (versoes && versoes.length > 0 && versoes[0].id) {
-      return versoes[versoes.length - 1].id! // Padrão: versão mais recente
+      return versaoMaisRecente(versoes)?.id ?? '' // Padrão: versão mais recente
     }
     return ''
   }, [selectedVersaoId, versoes])

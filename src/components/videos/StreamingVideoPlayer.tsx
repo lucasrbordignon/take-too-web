@@ -1,6 +1,7 @@
 import type Hls from 'hls.js'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { VideoDTO } from '../../api/types.ts'
+import { playbackErrorMessage } from '../../lib/playbackError.ts'
 import { videosService } from '../../services/videos.service.ts'
 
 interface StreamingVideoPlayerProps {
@@ -38,6 +39,7 @@ export function StreamingVideoPlayer({ video, onClose }: StreamingVideoPlayerPro
     setError(null)
     try {
       const playback = await videosService.criarPlayback(video.id)
+      if (playback.miniaturaUrl) media.poster = playback.miniaturaUrl
       const attach = () => {
         if (position > 0) media.currentTime = position
         if (resume) void media.play().catch(() => undefined)
@@ -58,7 +60,7 @@ export function StreamingVideoPlayer({ video, onClose }: StreamingVideoPlayerPro
           if (!data.fatal) return
           if (!recoveryRef.current) {
             recoveryRef.current = true
-            void loadPlaybackRef.current(true, !media.paused).finally(() => { recoveryRef.current = false })
+            void loadPlaybackRef.current(true, !media.paused)
           } else {
             setError('A reprodução foi interrompida. Atualize a sessão para tentar novamente.')
           }
@@ -68,10 +70,10 @@ export function StreamingVideoPlayer({ video, onClose }: StreamingVideoPlayerPro
       }
       const expiresIn = new Date(playback.expiraEm).getTime() - Date.now()
       if (Number.isFinite(expiresIn) && expiresIn > 0) {
-        renewTimerRef.current = window.setTimeout(() => void loadPlaybackRef.current(true, !media.paused), expiresIn + 500)
+        renewTimerRef.current = window.setTimeout(() => void loadPlaybackRef.current(true, !media.paused), Math.max(1000, expiresIn - 30000))
       }
-    } catch {
-      setError('Não foi possível preparar a reprodução. Tente novamente.')
+    } catch (reason) {
+      setError(playbackErrorMessage(reason))
     } finally {
       setIsLoading(false)
     }
@@ -106,7 +108,7 @@ export function StreamingVideoPlayer({ video, onClose }: StreamingVideoPlayerPro
             {isLoading && <div className="absolute inset-0 grid place-items-center bg-black/50 text-sm text-[#E2E5EA]">Preparando reprodução…</div>}
           </div>
         </div>
-        {error && <div className="px-4 pb-4 flex flex-wrap gap-3 items-center text-sm text-[#FCA5A5]" role="alert"><span>{error}</span><button type="button" onClick={() => void loadPlayback(true, false)} className="h-10 px-3 rounded-lg bg-[#242832] text-white font-semibold">Tentar novamente</button></div>}
+        {error && <div className="px-4 pb-4 flex flex-wrap gap-3 items-center text-sm text-[#FCA5A5]" role="alert"><span>{error}</span><button type="button" onClick={() => { recoveryRef.current = false; void loadPlayback(true, false) }} className="h-10 px-3 rounded-lg bg-[#242832] text-white font-semibold">Tentar novamente</button></div>}
       </div>
     </div>
   )

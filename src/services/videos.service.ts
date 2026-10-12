@@ -8,6 +8,14 @@ import type {
 } from '../api/types.ts'
 
 export const videosService = {
+  async criarUploadNoProjeto(projetoId: string, data: VideoUploadCreateDTO): Promise<VideoUploadDTO> {
+    return (await apiClient.post<VideoUploadDTO>(`/api/projetos/${projetoId}/videos/uploads`, data)).data
+  },
+
+  async listarRascunhos(projetoId: string, pagina = 0): Promise<VideoPageDTO> {
+    return (await apiClient.get<VideoPageDTO>(`/api/projetos/${projetoId}/videos`, { params: { pagina, tamanho: 20 } })).data
+  },
+
   async listar(pagina = 0, tamanho = 20): Promise<VideoPageDTO> {
     const response = await apiClient.get<VideoPageDTO>('/api/videos', { params: { pagina, tamanho } })
     return response.data
