@@ -251,3 +251,7 @@ Cancelar um upload exige dois cliques: “Cancelar envio” e “Confirmar cance
 As origens usam abas com indicador de seleção e navegação por teclado. As miniaturas reais são carregadas somente para cards próximos à área visível, por URL assinada devolvida em `miniaturaUrl` pelo playback. Vídeos verticais preservam o enquadramento. Enquanto processam ou quando a prévia falha, o card mantém um placeholder. Requer backend atualizado e credenciais de signing configuradas.
 
 O histórico do projeto mostra versões em ordem numérica decrescente (Vn → V1). Portal e comentários escolhem a versão de maior número independentemente da ordem devolvida pela API. Se o playback responder 503 com signing ausente, configure as duas variáveis `MUX_SIGNING_KEY_ID` e `MUX_SIGNING_PRIVATE_KEY` no `.env` do backend e execute `docker compose up -d --force-recreate api`; apenas reiniciar não reaplica o ambiente.
+
+### Reprodução HLS e diagnóstico
+
+O portal, a versão do profissional e a biblioteca usam o mesmo controle de reprodução. O player prioriza HLS.js/MSE (inclusive no Brave/Chromium) e usa reprodução nativa quando MSE não está disponível. Troca de vídeo, desmontagem e renovação cancelam sessões antigas. Falhas de autorização permitem uma única renovação automática; falhas de decodificação permitem uma recuperação de mídia. A interface distingue rede, autorização, formato e decodificação, com um código em “Detalhes do erro”, sem expor URLs assinadas ou tokens. A indicação de carregamento só termina quando o vídeo possui dados reproduzíveis ou ocorre uma falha.

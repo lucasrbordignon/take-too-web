@@ -1,10 +1,9 @@
-import type Hls from 'hls.js'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import type { ComponentProps } from 'react'
 import type { VersaoDTO } from '../api/types.ts'
 import { portalService } from '../services/portal.service.ts'
 import { versoesService } from '../services/versoes.service.ts'
-import { playbackErrorMessage } from '../lib/playbackError.ts'
+import { useSignedPlayback } from '../hooks/useSignedPlayback.ts'
 import { VideoPlayer } from './shared/VideoPlayer.tsx'
 
 type Props = Omit<ComponentProps<typeof VideoPlayer>, 'src'> & {
@@ -24,76 +23,8 @@ function SignedVersionPlayer({ versao, projetoId, portal, markers = [], seekRequ
   const request = useCallback(() => portal
     ? portalService.criarPlayback(versao!.id!)
     : versoesService.criarPlayback(projetoId!, versao!.id!), [portal, projetoId, versao])
-  // IDs controlam a sessão; atualizações dos metadados não reiniciam o player.
-  const requestRef = useRef(request)
-  useEffect(() => { requestRef.current = request }, [request])
-  const renewRef = useRef<() => void>(() => undefined)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const media = mediaRef.current
-    if (!media) return
-    let disposed = false
-    let generation = 0
-    let stream: Hls | undefined
-    let timer: number | undefined
-    let recovered = false
-    const load = async (preserve = false) => {
-      const currentGeneration = ++generation
-      const position = preserve ? media.currentTime : initialSeekTime
-      const resume = preserve && !media.paused
-      window.clearTimeout(timer)
-      stream?.destroy()
-      stream = undefined
-      setLoading(true)
-      setError(null)
-      try {
-        const session = await requestRef.current()
-        if (disposed || currentGeneration !== generation) return
-        if (session.miniaturaUrl) media.poster = session.miniaturaUrl
-        const attach = () => {
-          if (position > 0) media.currentTime = position
-          if (resume) void media.play().catch(() => undefined)
-        }
-        media.onloadedmetadata = attach
-        if (media.canPlayType(session.tipo)) media.src = session.url
-        else {
-          const { default: HlsPlayer } = await import('hls.js')
-          if (disposed || currentGeneration !== generation) return
-          if (!HlsPlayer.isSupported()) throw new Error('unsupported')
-          stream = new HlsPlayer()
-          stream.on(HlsPlayer.Events.ERROR, (_event, data) => {
-            if (!data.fatal || disposed || currentGeneration !== generation) return
-            if (recovered) setError('Reprodução interrompida. Tente renovar a sessão.')
-            else { recovered = true; void load(true) }
-          })
-          stream.loadSource(session.url)
-          stream.attachMedia(media)
-        }
-        const remaining = new Date(session.expiraEm).getTime() - Date.now()
-        if (Number.isFinite(remaining) && remaining > 0) {
-          timer = window.setTimeout(() => void load(true), Math.max(1000, remaining - 30000))
-        }
-      } catch (reason) {
-        if (!disposed && currentGeneration === generation) setError(playbackErrorMessage(reason, portal))
-      } finally {
-        if (!disposed && currentGeneration === generation) setLoading(false)
-      }
-    }
-    renewRef.current = () => { recovered = false; void load(true) }
-    void load(false)
-    return () => {
-      disposed = true
-      ++generation
-      window.clearTimeout(timer)
-      stream?.destroy()
-      media.onloadedmetadata = null
-      media.pause()
-      media.removeAttribute('src')
-      media.load()
-    }
-  }, [versao?.id, projetoId, portal, initialSeekTime])
+  const { loading, error, retry } = useSignedPlayback(mediaRef,
+    `${portal ? 'portal' : projetoId}:${versao?.id}`, request, initialSeekTime, portal)
 
   useEffect(() => {
     if (seekRequest && mediaRef.current) mediaRef.current.currentTime = seekRequest.time
@@ -105,11 +36,10 @@ function SignedVersionPlayer({ versao, projetoId, portal, markers = [], seekRequ
     <div className="relative mx-auto max-w-full" style={{ aspectRatio: `${width}/${height}`, width: `min(100%, calc(65dvh * ${width / height}))` }}>
       <video ref={mediaRef} controls playsInline className="w-full h-full max-h-[65dvh] object-contain"
         onTimeUpdate={(e) => onTimeUpdate(Math.floor(e.currentTarget.currentTime))}
-        onDurationChange={(e) => { if (Number.isFinite(e.currentTarget.duration)) onDurationChange(Math.floor(e.currentTarget.duration)) }}
-        onError={() => setError('A reprodução foi interrompida. Renove a sessão para tentar novamente.')} />
-      {loading && <p className="absolute inset-0 grid place-items-center bg-black/60 text-sm text-white" role="status">Preparando vídeo…</p>}
+        onDurationChange={(e) => { if (Number.isFinite(e.currentTarget.duration)) onDurationChange(Math.floor(e.currentTarget.duration)) }} />
+      {loading && <p className="pointer-events-none absolute inset-0 grid place-items-center bg-black/60 text-sm text-white" role="status">Preparando vídeo…</p>}
     </div>
-    {error && <div role="alert" className="mt-3 flex flex-col sm:flex-row gap-2 text-sm text-red-300"><p>{error}</p><button type="button" onClick={() => renewRef.current()} className="min-h-11 px-3 rounded-lg bg-[#242832] text-white">Tentar novamente</button></div>}
+    {error && <div role="alert" className="mt-3 flex flex-col sm:flex-row gap-2 text-sm text-red-300"><div><p>{error.message}</p><details className="mt-2 text-xs text-[#A8B0C0]"><summary className="cursor-pointer">Detalhes do erro</summary><p className="mt-1 font-mono">{error.code}</p></details></div><button type="button" onClick={retry} className="min-h-11 px-3 rounded-lg bg-[#242832] text-white">Tentar novamente</button></div>}
     {!!markers.length && <nav aria-label="Comentários por tempo" className="mt-3 flex flex-wrap gap-2">{markers.map((marker) => <button key={marker.id} type="button" title={marker.label} onClick={() => { if (mediaRef.current) mediaRef.current.currentTime = marker.timestampSec }} className="min-h-11 px-3 rounded-lg bg-[#242832] text-xs text-[#E2E5EA]">{Math.floor(marker.timestampSec / 60)}:{String(marker.timestampSec % 60).padStart(2, '0')} · Comentário</button>)}</nav>}
   </section>
 }
