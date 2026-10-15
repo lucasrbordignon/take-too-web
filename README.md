@@ -255,3 +255,7 @@ O histórico do projeto mostra versões em ordem numérica decrescente (Vn → V
 ### Reprodução HLS e diagnóstico
 
 O portal, a versão do profissional e a biblioteca usam o mesmo controle de reprodução. O player prioriza HLS.js/MSE (inclusive no Brave/Chromium) e usa reprodução nativa quando MSE não está disponível. Troca de vídeo, desmontagem e renovação cancelam sessões antigas. Falhas de autorização permitem uma única renovação automática; falhas de decodificação permitem uma recuperação de mídia. A interface distingue rede, autorização, formato e decodificação, com um código em “Detalhes do erro”, sem expor URLs assinadas ou tokens. A indicação de carregamento só termina quando o vídeo possui dados reproduzíveis ou ocorre uma falha.
+
+### Feedback sem interromper o vídeo
+
+Adicionar feedback abre um painel flutuante não modal sobre a revisão, sem trocar a tela, remontar o player ou pausar o vídeo. Os controles do vídeo continuam disponíveis. O comentário usa o segundo e a versão capturados ao abrir o painel, mesmo que a reprodução avance. Fechar preserva o rascunho; o texto só é limpo após envio confirmado. Falhas mantêm o painel e apresentam erro para tentar novamente.

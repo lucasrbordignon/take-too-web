@@ -1,5 +1,5 @@
 import { versaoMaisRecente } from '../utils/versoes.ts'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
 import {
   usePortalProjeto,
@@ -10,7 +10,7 @@ import {
 } from '../hooks/usePortal.ts'
 import { setClientToken, getClientToken } from '../api/client.ts'
 import { VersionVideoPlayer } from '../components/VersionVideoPlayer.tsx'
-import { resolveVideoSource } from '../lib/videoSource.ts'
+import { FeedbackOverlay } from '../components/FeedbackOverlay.tsx'
 
 interface CommentItem {
   id: string
@@ -77,6 +77,9 @@ export function ClientPortalPage() {
     searchParams.get('action') === 'feedback'
   )
   const [feedbackText, setFeedbackText] = useState('')
+  const [feedbackTarget, setFeedbackTarget] = useState<{ time: number; versionId?: string } | null>(null)
+  const [feedbackError, setFeedbackError] = useState<string | null>(null)
+  const sendingFeedback = useRef(false)
   const [decisionStatus, setDecisionStatus] = useState<'IDLE' | 'APROVADO' | 'AJUSTES'>('IDLE')
   const [isSubmittingDecision, setIsSubmittingDecision] = useState(false)
   const [decisionError, setDecisionError] = useState<string | null>(null)
@@ -89,13 +92,10 @@ export function ClientPortalPage() {
     }
     return null
   }, [realVersoes])
-  const activeVideoSource = useMemo(
-    () => resolveVideoSource(activeVersao?.arquivoUrl ?? undefined),
-    [activeVersao?.arquivoUrl]
-  )
+
 
   const { data: realComentarios } = usePortalComentarios(activeVersao?.id)
-  const { mutate: criarComentarioMutation } = usePortalCriarComentario(activeVersao?.id, id)
+  const { mutateAsync: criarComentarioMutation, isPending: isSavingFeedback } = usePortalCriarComentario(feedbackTarget?.versionId ?? activeVersao?.id, id)
   const { mutate: alterarStatusVersaoMutation } = usePortalAlterarStatusVersao(activeVersao?.id, id)
 
   const versaoLabel = activeVersao?.numero
@@ -160,32 +160,36 @@ export function ClientPortalPage() {
   }, [comments, autorFilter])
 
 
-  // Add feedback at current timestamp
-  const handleSaveFeedback = (e: React.FormEvent) => {
-    e.preventDefault()
+  const openFeedback = () => {
+    if (!feedbackText.trim()) setFeedbackTarget({ time: currentTime, versionId: activeVersao?.id })
+    setFeedbackError(null)
+    setIsAddingFeedback(true)
+  }
+
+  const handleSaveFeedback = async (event: React.FormEvent) => {
+    event.preventDefault()
     const trimmed = feedbackText.trim()
-    if (!trimmed) return
-
-    setFeedbackText('')
-    setIsAddingFeedback(false)
-
-    // Se temos a versão real da API, persiste via mutation (o React Query atualiza a lista automaticamente)
-    if (activeVersao?.id) {
-      criarComentarioMutation({
-        texto: trimmed,
-        tempoVideo: currentTime,
-      })
-    } else {
-      // Modo demo ou sem versão vinculada
-      const newComment: CommentItem = {
-        id: `comment-${Date.now()}`,
-        timestampSec: currentTime,
-        timecode: formatTimecode(currentTime),
-        texto: trimmed,
-        autorTipo: 'CLIENTE',
-        isHighlighted: true,
+    if (!trimmed || sendingFeedback.current) return
+    sendingFeedback.current = true
+    setFeedbackError(null)
+    const timestamp = feedbackTarget?.time ?? 0
+    try {
+      if (feedbackTarget?.versionId ?? activeVersao?.id) {
+        await criarComentarioMutation({ texto: trimmed, tempoVideo: timestamp })
+      } else {
+        const newComment: CommentItem = {
+          id: `comment-${Date.now()}`, timestampSec: timestamp, timecode: formatTimecode(timestamp),
+          texto: trimmed, autorTipo: 'CLIENTE', isHighlighted: true,
+        }
+        setLocalComments((previous) => [...previous, newComment])
       }
-      setLocalComments((prev) => [...prev, newComment])
+      setFeedbackText('')
+      setFeedbackTarget(null)
+      setIsAddingFeedback(false)
+    } catch {
+      setFeedbackError('Não foi possível enviar o comentário. Seu texto foi mantido; tente novamente.')
+    } finally {
+      sendingFeedback.current = false
     }
   }
 
@@ -308,111 +312,6 @@ export function ClientPortalPage() {
 
       {/* Main Body */}
       <main className="flex-1 w-full max-w-[1104px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-6">
-        {/* VIEW 2: 05 · Client Portal · Add Feedback */}
-        {showFeedbackForm ? (
-          <div className="w-full max-w-[680px] mx-auto flex flex-col gap-6 animate-in fade-in duration-150">
-            {/* Back Button */}
-            <div>
-              <button
-                type="button"
-                onClick={() => setIsAddingFeedback(false)}
-                className="font-semibold text-[13px] leading-[16px] text-[#A8B0C0] hover:text-[#F8FAFC] transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-              >
-                <span>←</span>
-                <span>{projetoNome}</span>
-              </button>
-            </div>
-
-            {/* Title & Subtitle */}
-            <div className="flex flex-col gap-1.5">
-              <h1 className="font-bold text-[24px] sm:text-[28px] leading-tight text-[#F8FAFC]">
-                Adicionar feedback
-              </h1>
-              <p className="font-normal text-[13px] sm:text-[14px] leading-normal text-[#A8B0C0]">
-                Seu comentário ficará preso ao segundo exato do vídeo.
-              </p>
-            </div>
-
-            {activeVersao?.videoId ? <VersionVideoPlayer portal versao={activeVersao}
-              initialSeekTime={currentTime} currentTime={currentTime} totalDuration={totalDuration}
-              onTimeUpdate={() => undefined} onDurationChange={setTotalDuration} /> : <>
-            {/* Frozen Frame Preview */}
-            <div className="w-full aspect-video max-h-[360px] bg-[#111827] border border-[#2E3440]/60 rounded-[14px] relative flex items-center justify-center overflow-hidden shadow-lg">
-              {activeVideoSource.type === 'direct' ? (
-                <video
-                  src={activeVideoSource.url}
-                  className="w-full h-full object-cover"
-                />
-              ) : activeVideoSource.type === 'youtube' || activeVideoSource.type === 'google-drive' ? (
-                <iframe
-                  src={activeVideoSource.embedUrl}
-                  title="Prévia do vídeo"
-                  className="w-full h-full border-0"
-                  allow="autoplay; fullscreen; picture-in-picture"
-                  allowFullScreen
-                />
-              ) : (
-                <span className="font-bold text-[28px] leading-normal text-[#A78BFA] tracking-wider drop-shadow-md">
-                  {projetoNome}
-                </span>
-              )}
-
-              {/* Timestamp overlay */}
-              <div className="absolute left-4 bottom-4">
-                <span className="font-semibold text-[13px] leading-[16px] text-[#C4B5FD] font-mono bg-black/60 backdrop-blur-xs px-2.5 py-1 rounded-md border border-purple-500/20">
-                  {formatTimecode(currentTime)}
-                </span>
-              </div>
-            </div>
-
-            </>}
-
-            {/* Feedback Input Card */}
-            <form onSubmit={handleSaveFeedback} id="feedback-form" className="flex flex-col gap-2.5">
-              <div className="w-full bg-[#1A1D24] border border-[#2E3440] focus-within:border-[#8B5CF6] rounded-[12px] p-4 flex flex-col gap-2 transition-colors shadow-sm">
-                <span className="font-semibold text-[12px] leading-[15px] text-[#A78BFA]">
-                  {formatTimecode(currentTime)}
-                </span>
-
-                <textarea
-                  autoFocus
-                  required
-                  rows={4}
-                  value={feedbackText}
-                  onChange={(e) => setFeedbackText(e.target.value)}
-                  placeholder="Descreva o que precisa mudar neste momento..."
-                  className="w-full bg-transparent text-[14px] leading-[20px] text-[#F8FAFC] placeholder-[#788194] resize-none outline-none border-none"
-                />
-              </div>
-
-              <span className="font-normal text-[11px] leading-[14px] text-[#A8B0C0] px-1">
-                Dica: seja objetivo para acelerar a próxima versão.
-              </span>
-
-              {/* Action Buttons */}
-              <div className="pt-4 flex flex-col sm:flex-row items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFeedbackText('')
-                    setIsAddingFeedback(false)
-                  }}
-                  className="w-full sm:w-auto px-6 h-[44px] bg-[#1A1D24] border border-[#3A414F] hover:bg-[#242832] rounded-[10px] font-semibold text-[13px] text-[#A8B0C0] hover:text-[#F8FAFC] transition-colors cursor-pointer flex items-center justify-center order-2 sm:order-1"
-                >
-                  Cancelar
-                </button>
-
-                <button
-                  type="submit"
-                  className="w-full sm:w-auto px-8 h-[44px] bg-[#8B5CF6] hover:bg-[#7C3AED] active:scale-[0.99] rounded-[10px] font-semibold text-[13px] leading-[16px] text-[#FFFFFF] shadow-lg shadow-purple-600/25 transition-all cursor-pointer flex items-center justify-center order-1 sm:order-2"
-                >
-                  Salvar comentário
-                </button>
-              </div>
-            </form>
-          </div>
-        ) : (
-          /* VIEW 1: 04 · Client Portal · Review */
           <div className="flex flex-col gap-6 animate-in fade-in duration-150">
             {/* Project Title & Subtitle */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -435,7 +334,7 @@ export function ClientPortalPage() {
               ) : (
                 <button
                   type="button"
-                  onClick={() => setIsAddingFeedback(true)}
+                  onClick={openFeedback}
                   className="h-[42px] px-5 bg-[#8B5CF6] hover:bg-[#7C3AED] active:scale-[0.99] text-[#FFFFFF] rounded-[10px] font-semibold text-[13px] leading-[16px] flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-purple-600/25 transition-all shrink-0 self-start sm:self-auto"
                 >
                   <span>＋</span>
@@ -635,8 +534,10 @@ export function ClientPortalPage() {
               </div>
             </div>
           </div>
-        )}
       </main>
+
+      {showFeedbackForm && <FeedbackOverlay timestamp={feedbackTarget?.time ?? 0} text={feedbackText} busy={isSavingFeedback} error={feedbackError}
+        onTextChange={setFeedbackText} onClose={() => setIsAddingFeedback(false)} onSubmit={(event) => void handleSaveFeedback(event)} />}
 
       {/* Footer */}
       <footer className="w-full py-6 flex items-center justify-center gap-2 text-xs text-[#788194] border-t border-[#2E3440]/30">
