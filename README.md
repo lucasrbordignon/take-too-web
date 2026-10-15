@@ -221,7 +221,7 @@ Este projeto está sob a licença [MIT](LICENSE).
 ## Vídeos no projeto — etapa 1
 
 Em um projeto em edição, **Publicar nova versão** oferece envio de arquivo,
-seleção da biblioteca e link externo legado. O envio fica como rascunho
+seleção da biblioteca em um único modal. O envio fica como rascunho
 recuperável ao reabrir o modal; publicar é uma ação separada, habilitada somente
 para vídeos prontos. O player do profissional e o portal usam sessões HLS
 temporárias autorizadas pela versão, mantendo comentários por tempo.
