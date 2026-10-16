@@ -6,11 +6,11 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ClientPortalPage } from './ClientPortalPage.tsx'
 
-const mocks = vi.hoisted(() => ({ save: vi.fn(), mount: vi.fn(), unmount: vi.fn() }))
+const mocks = vi.hoisted(() => ({ save: vi.fn(), mount: vi.fn(), unmount: vi.fn(), image: false }))
 vi.mock('../api/client.ts', () => ({ getClientToken: () => 'test-token', setClientToken: vi.fn() }))
 vi.mock('../hooks/usePortal.ts', () => ({
   usePortalProjeto: () => ({ data: { nome: 'Projeto teste', etapaAtual: 'REVISAO_CLIENTE' }, isLoading: false, isError: false }),
-  usePortalVersoes: () => ({ data: [{ id: 'version', numero: 1, videoId: 'video', status: 'DISPONIVEL' }], isLoading: false }),
+  usePortalVersoes: () => ({ data: [{ id: 'version', numero: 1, ...(mocks.image ? { imagemId: 'image', tipoMidia: 'IMAGEM' } : { videoId: 'video' }), status: 'DISPONIVEL' }], isLoading: false }),
   usePortalComentarios: () => ({ data: [] }),
   usePortalCriarComentario: () => ({ mutateAsync: mocks.save, isPending: false }),
   usePortalAlterarStatusVersao: () => ({ mutate: vi.fn() }),
@@ -49,6 +49,16 @@ async function typeFeedback(text: string) {
 async function submit() { await act(async () => { container.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) }) }
 
 describe('feedback sobre a revisão', () => {
+  it('envia feedback de imagem sem timestamp e mantém a revisão aberta', async () => {
+    mocks.image = true
+    try {
+      await act(async () => root.render(<MemoryRouter initialEntries={['/portal/projetos/test']}><Routes><Route path="/portal/projetos/:id" element={<ClientPortalPage />} /></Routes></MemoryRouter>))
+      await click('Adicionar feedback'); await typeFeedback('Ajustar contraste'); await submit()
+      expect(mocks.save).toHaveBeenCalledExactlyOnceWith({ texto: 'Ajustar contraste' })
+      expect(container.querySelector('[role="dialog"]')).toBeNull()
+    } finally { mocks.image = false }
+  })
+
   it('mantém o mesmo player, sua posição e os controles ao abrir e fechar o overlay', async () => {
     const video = container.querySelector('video')!
     video.currentTime = 37

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
-import type { VideoDTO } from '../api/types.ts'
+import type { VideoDTO, ImagemDTO } from '../api/types.ts'
 import { useCriarVersao } from '../hooks/useVersoes.ts'
 import { videosService } from '../services/videos.service.ts'
 import { VideoThumbnail } from './videos/VideoThumbnail.tsx'
+import { ImagePicker } from './ImagePicker.tsx'
 import { UploadDialog } from '../pages/VideosPage.tsx'
 
 interface Props { isOpen: boolean; onClose: () => void; projetoId: string; proximaVersao?: number; emEdicao?: boolean }
@@ -19,6 +20,8 @@ function message(error: unknown, fallback: string) {
 function VersionForm({ onClose, projetoId, proximaVersao = 1, emEdicao = true }: Props) {
   const queryClient = useQueryClient()
   const publish = useCriarVersao(projetoId)
+  const [mediaType, setMediaType] = useState<'video' | 'image'>('video')
+  const [selectedImage, setSelectedImage] = useState<ImagemDTO | null>(null)
   const [mode, setMode] = useState<'upload' | 'library'>('upload')
   const [page, setPage] = useState(0)
   const [draftPage, setDraftPage] = useState(0)
@@ -33,15 +36,15 @@ function VersionForm({ onClose, projetoId, proximaVersao = 1, emEdicao = true }:
   const drafts = useQuery({
     queryKey: ['project-videos', projetoId, draftPage],
     queryFn: () => videosService.listarRascunhos(projetoId, draftPage),
-    enabled: mode === 'upload',
+    enabled: mediaType === 'video' && mode === 'upload',
     refetchInterval: (query) => query.state.data?.content.some((v) => ['CRIANDO_UPLOAD', 'AGUARDANDO_UPLOAD', 'PROCESSANDO'].includes(v.status)) ? 15000 : false,
   })
-  const library = useQuery({ queryKey: ['videos', page], queryFn: () => videosService.listar(page), enabled: mode === 'library' })
+  const library = useQuery({ queryKey: ['videos', page], queryFn: () => videosService.listar(page), enabled: mediaType === 'video' && mode === 'library' })
   const list = mode === 'library' ? library : drafts
   const selectedVideo = useQuery({
     queryKey: ['selected-video', selected?.id],
     queryFn: () => videosService.sincronizar(selected!.id),
-    enabled: !!selected,
+    enabled: !!selected && mediaType === 'video',
     initialData: selected ?? undefined,
     staleTime: 5000,
     retry: false,
@@ -49,7 +52,7 @@ function VersionForm({ onClose, projetoId, proximaVersao = 1, emEdicao = true }:
   })
   const candidate = selectedVideo.data ?? selected
 
-  const canPublish = candidate?.status === 'PRONTO'
+  const canPublish = mediaType === 'image' ? selectedImage?.status === 'PRONTA' : candidate?.status === 'PRONTO'
   const closeRef = useRef(onClose)
   useEffect(() => { closeRef.current = onClose }, [onClose])
   const closeButton = useRef<HTMLButtonElement>(null)
@@ -73,7 +76,7 @@ function VersionForm({ onClose, projetoId, proximaVersao = 1, emEdicao = true }:
     if (!canPublish || !emEdicao || uploading || operation.current) return
     operation.current = true; setError(null)
     try {
-      await publish.mutateAsync({ videoId: candidate!.id })
+      await publish.mutateAsync(mediaType === 'image' ? { imagemId: selectedImage!.id } : { videoId: candidate!.id })
       await refresh()
       closeRef.current()
     } catch (reason) { setError(message(reason, 'Não foi possível publicar. Atualize as versões antes de tentar novamente.')) }
@@ -83,14 +86,16 @@ function VersionForm({ onClose, projetoId, proximaVersao = 1, emEdicao = true }:
     <div role="dialog" aria-modal="true" aria-labelledby="version-title" onKeyDown={(event) => {
       if (event.key === 'Escape' && !uploading && !deleting && !publish.isPending && !busy) onClose()
       if (event.key === 'Tab') {
-        const controls = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), [tabindex="0"]'))
+        const controls = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]'))
         const first = controls[0]; const last = controls[controls.length - 1]
         if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus() }
         else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus() }
       }
     }} className="w-full max-w-5xl max-h-[90dvh] overflow-y-auto rounded-2xl border border-[#343946] bg-[#1A1D24] p-4 sm:p-6 text-[#F8FAFC]">
-      <header className="flex gap-3 justify-between"><div><h2 id="version-title" className="text-xl font-bold">Publicar versão V{proximaVersao}</h2><p className="mt-1 text-sm text-[#A8B0C0]">Escolha o vídeo que o cliente vai revisar.</p></div><button ref={closeButton} type="button" disabled={publish.isPending || busy || uploading} onClick={onClose} aria-label="Fechar" className="h-11 w-11 shrink-0 rounded-lg bg-[#242832]">×</button></header>
+      <header className="flex gap-3 justify-between"><div><h2 id="version-title" className="text-xl font-bold">Publicar versão V{proximaVersao}</h2><p className="mt-1 text-sm text-[#A8B0C0]">Escolha a mídia que o cliente vai revisar.</p></div><button ref={closeButton} type="button" disabled={publish.isPending || busy || uploading} onClick={onClose} aria-label="Fechar" className="h-11 w-11 shrink-0 rounded-lg bg-[#242832]">×</button></header>
       {!emEdicao && <p role="status" className="mt-4 text-sm text-amber-300">O projeto precisa estar em edição para enviar ou publicar uma versão.</p>}
+      <label className="mt-4 flex items-center gap-3 text-sm text-[#A8B0C0]">Tipo de mídia<select aria-label="Tipo de mídia" value={mediaType} disabled={uploading || busy || publish.isPending} onChange={(event) => { setMediaType(event.target.value as 'video' | 'image'); setError(null) }} className="min-h-11 rounded-lg border border-[#343946] bg-[#12151C] px-3 text-[#F8FAFC]"><option value="video">Vídeo</option><option value="image">Imagem</option></select></label>
+      {mediaType === 'image' ? <ImagePicker projetoId={projetoId} selected={selectedImage} onSelected={setSelectedImage} onBusyChange={setUploading} disabled={!emEdicao || publish.isPending} /> : <>
       <nav role="tablist" aria-label="Origem do vídeo" className="mt-5 flex border-b border-[#343946]">{(['upload', 'library'] as const).map((tab, index) => <button key={tab} id={`video-tab-${tab}`} type="button" role="tab" aria-selected={mode === tab} aria-controls={`video-panel-${tab}`} tabIndex={mode === tab ? 0 : -1} disabled={publish.isPending || uploading || busy} onClick={() => { setMode(tab); setSearch(''); setError(null) }} onKeyDown={(event) => {
         if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
         event.preventDefault()
@@ -112,8 +117,10 @@ function VersionForm({ onClose, projetoId, proximaVersao = 1, emEdicao = true }:
         </li>)}</ul>
         {list.data && list.data.totalPages > 1 && <nav aria-label="Paginação de vídeos" className="mt-3 flex items-center justify-between gap-2 text-xs"><button type="button" disabled={list.data.first} onClick={() => { setSearch(''); if (mode === 'library') setPage((p) => p - 1); else setDraftPage((p) => p - 1) }} className="min-h-11 px-3 rounded-lg bg-[#242832] disabled:opacity-40">Anterior</button><span>{list.data.number + 1} / {list.data.totalPages}</span><button type="button" disabled={list.data.last} onClick={() => { setSearch(''); if (mode === 'library') setPage((p) => p + 1); else setDraftPage((p) => p + 1) }} className="min-h-11 px-3 rounded-lg bg-[#242832] disabled:opacity-40">Próxima</button></nav>}
       </section>
+      </>}
+      {selectedImage && mediaType === 'image' && <p className="mt-4 text-sm text-[#C4B5FD]">Selecionada: {selectedImage.nome} · pronta para revisão</p>}
       {error && !deleting && <p role="alert" className="mt-4 text-sm text-red-300">{error}</p>}
-      {candidate && <aside className="mt-4 rounded-xl border border-[#8B5CF6]/50 bg-[#12151C] p-3" aria-live="polite"><div className="flex items-center justify-between gap-3"><p className="min-w-0 truncate text-sm font-semibold">Selecionado: {candidate.nome}</p><button type="button" disabled={publish.isPending || uploading} onClick={() => setSelected(null)} className="min-h-11 px-3 text-xs text-[#A78BFA]">Limpar</button></div><p className="text-xs text-[#A8B0C0]">{candidate.status === 'PRONTO' ? 'Pronto para revisão.' : candidate.status === 'PROCESSANDO' ? 'Processando… Você pode voltar ao projeto e publicar depois.' : 'Este vídeo ainda não está disponível para publicação.'}</p>{selectedVideo.isError && <button type="button" onClick={() => void selectedVideo.refetch()} className="min-h-11 text-sm text-amber-300">Não foi possível atualizar. Tentar novamente</button>}</aside>}
+      {candidate && mediaType === 'video' && <aside className="mt-4 rounded-xl border border-[#8B5CF6]/50 bg-[#12151C] p-3" aria-live="polite"><div className="flex items-center justify-between gap-3"><p className="min-w-0 truncate text-sm font-semibold">Selecionado: {candidate.nome}</p><button type="button" disabled={publish.isPending || uploading} onClick={() => setSelected(null)} className="min-h-11 px-3 text-xs text-[#A78BFA]">Limpar</button></div><p className="text-xs text-[#A8B0C0]">{candidate.status === 'PRONTO' ? 'Pronto para revisão.' : candidate.status === 'PROCESSANDO' ? 'Processando… Você pode voltar ao projeto e publicar depois.' : 'Este vídeo ainda não está disponível para publicação.'}</p>{selectedVideo.isError && <button type="button" onClick={() => void selectedVideo.refetch()} className="min-h-11 text-sm text-amber-300">Não foi possível atualizar. Tentar novamente</button>}</aside>}
       <footer className="sticky bottom-0 bg-[#1A1D24] mt-5 border-t border-[#343946] pt-4 flex gap-3"><button type="button" disabled={publish.isPending || busy || uploading} onClick={onClose} className="min-h-11 flex-1 rounded-lg bg-[#242832] text-sm">Fechar</button><button type="button" onClick={() => void submit()} disabled={!emEdicao || !canPublish || publish.isPending || busy || uploading || !!deleting} className="min-h-11 flex-1 rounded-lg bg-[#8B5CF6] disabled:opacity-40 text-sm font-semibold">{publish.isPending ? 'Publicando…' : 'Publicar versão'}</button></footer>
       {deleting && <section aria-label="Confirmar exclusão" className="mt-4 rounded-xl border border-red-400/40 bg-[#12151C] p-4"><p className="text-sm">Excluir “{deleting.nome}”? Vídeos publicados são protegidos.</p>{error && <p role="alert" className="mt-2 text-sm text-red-300">{error}</p>}<div className="mt-3 flex gap-3"><button type="button" disabled={busy} onClick={() => { setDeleting(null); setError(null) }} className="min-h-11 rounded-lg bg-[#242832] px-4 text-sm">Cancelar</button><button type="button" disabled={busy} onClick={() => void remove()} className="min-h-11 rounded-lg bg-red-600 px-4 text-sm">{busy ? 'Excluindo…' : 'Confirmar exclusão'}</button></div></section>}
     </div>

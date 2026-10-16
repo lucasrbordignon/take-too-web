@@ -77,7 +77,7 @@ export function ClientPortalPage() {
     searchParams.get('action') === 'feedback'
   )
   const [feedbackText, setFeedbackText] = useState('')
-  const [feedbackTarget, setFeedbackTarget] = useState<{ time: number; versionId?: string } | null>(null)
+  const [feedbackTarget, setFeedbackTarget] = useState<{ time: number; versionId?: string; image?: boolean } | null>(null)
   const [feedbackError, setFeedbackError] = useState<string | null>(null)
   const sendingFeedback = useRef(false)
   const [decisionStatus, setDecisionStatus] = useState<'IDLE' | 'APROVADO' | 'AJUSTES'>('IDLE')
@@ -94,12 +94,14 @@ export function ClientPortalPage() {
   }, [realVersoes])
 
 
+  const isImage = !!activeVersao?.imagemId
+
   const { data: realComentarios } = usePortalComentarios(activeVersao?.id)
   const { mutateAsync: criarComentarioMutation, isPending: isSavingFeedback } = usePortalCriarComentario(feedbackTarget?.versionId ?? activeVersao?.id, id)
   const { mutate: alterarStatusVersaoMutation } = usePortalAlterarStatusVersao(activeVersao?.id, id)
 
   const versaoLabel = activeVersao?.numero
-    ? `V${activeVersao.numero} · CORTE PRELIMINAR`
+    ? `V${activeVersao.numero} · ${isImage ? 'IMAGEM' : 'CORTE PRELIMINAR'}`
     : (id === 'demo' ? 'V1 · CORTE PRELIMINAR' : 'SEM VERSÕES')
 
   const isApprovedOrDelivered = useMemo(() => {
@@ -161,7 +163,7 @@ export function ClientPortalPage() {
 
 
   const openFeedback = () => {
-    if (!feedbackText.trim()) setFeedbackTarget({ time: currentTime, versionId: activeVersao?.id })
+    if (!feedbackText.trim()) setFeedbackTarget({ time: currentTime, versionId: activeVersao?.id, image: isImage })
     setFeedbackError(null)
     setIsAddingFeedback(true)
   }
@@ -175,7 +177,7 @@ export function ClientPortalPage() {
     const timestamp = feedbackTarget?.time ?? 0
     try {
       if (feedbackTarget?.versionId ?? activeVersao?.id) {
-        await criarComentarioMutation({ texto: trimmed, tempoVideo: timestamp })
+        await criarComentarioMutation({ texto: trimmed, ...((feedbackTarget?.image ?? isImage) ? {} : { tempoVideo: timestamp }) })
       } else {
         const newComment: CommentItem = {
           id: `comment-${Date.now()}`, timestampSec: timestamp, timecode: formatTimecode(timestamp),
@@ -338,7 +340,7 @@ export function ClientPortalPage() {
                   className="h-[42px] px-5 bg-[#8B5CF6] hover:bg-[#7C3AED] active:scale-[0.99] text-[#FFFFFF] rounded-[10px] font-semibold text-[13px] leading-[16px] flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-purple-600/25 transition-all shrink-0 self-start sm:self-auto"
                 >
                   <span>＋</span>
-                  <span>Adicionar feedback em {formatTimecode(currentTime)}</span>
+                  <span>{isImage ? 'Adicionar feedback' : `Adicionar feedback em ${formatTimecode(currentTime)}`}</span>
                 </button>
               )}
             </div>
@@ -424,20 +426,20 @@ export function ClientPortalPage() {
                       Nenhum comentário encontrado
                     </h3>
                     <p className="text-[13px] text-[#788194] mt-1 max-w-sm mx-auto">
-                      Pause o vídeo em qualquer ponto e clique em &quot;Adicionar feedback&quot; para registrar marcações na timeline.
+                      {isImage ? 'Clique em “Adicionar feedback” para comentar esta imagem.' : 'Clique em “Adicionar feedback” para comentar o instante atual do vídeo.'}
                     </p>
                   </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {filteredComments.map((comment) => {
-                    const isCurrent = currentTime === comment.timestampSec
+                    const isCurrent = !isImage && currentTime === comment.timestampSec
                     const isProf = comment.autorTipo === 'PROFISSIONAL'
 
                     return (
                       <div
                         key={comment.id}
-                        onClick={() => setSeekRequest({ time: comment.timestampSec, id: Date.now() })}
+                        onClick={() => { if (!isImage) setSeekRequest({ time: comment.timestampSec, id: Date.now() }) }}
                         className={`rounded-[12px] p-4 flex flex-col gap-2.5 cursor-pointer transition-all border ${
                           comment.isHighlighted || isCurrent
                             ? 'bg-[#24213A] border-[#8B5CF6]/60 shadow-md shadow-purple-900/20'
@@ -453,7 +455,7 @@ export function ClientPortalPage() {
                             }`}
                           >
                             <span className="font-semibold text-[11px]">
-                              {comment.timecode}
+                              {isImage ? 'Imagem' : comment.timecode}
                             </span>
                           </div>
 
@@ -536,7 +538,7 @@ export function ClientPortalPage() {
           </div>
       </main>
 
-      {showFeedbackForm && <FeedbackOverlay timestamp={feedbackTarget?.time ?? 0} text={feedbackText} busy={isSavingFeedback} error={feedbackError}
+      {showFeedbackForm && <FeedbackOverlay timestamp={(feedbackTarget?.image ?? isImage) ? null : feedbackTarget?.time ?? 0} text={feedbackText} busy={isSavingFeedback} error={feedbackError}
         onTextChange={setFeedbackText} onClose={() => setIsAddingFeedback(false)} onSubmit={(event) => void handleSaveFeedback(event)} />}
 
       {/* Footer */}

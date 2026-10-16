@@ -13,6 +13,7 @@ import { ClientesPage } from './pages/ClientesPage.tsx'
 import { ComentariosPage } from './pages/ComentariosPage.tsx'
 import { ClientPortalPage } from './pages/ClientPortalPage.tsx'
 import { FoundationsPage } from './pages/FoundationsPage.tsx'
+import { ImagensPage } from './pages/ImagensPage.tsx'
 import { VideosPage } from './pages/VideosPage.tsx'
 
 export default function App() {
@@ -40,6 +41,7 @@ export default function App() {
                 <Route path="/clientes" element={<ClientesPage />} />
                 <Route path="/comentarios" element={<ComentariosPage />} />
                 <Route path="/videos" element={<VideosPage />} />
+                <Route path="/imagens" element={<ImagensPage />} />
               </Route>
             </Route>
 

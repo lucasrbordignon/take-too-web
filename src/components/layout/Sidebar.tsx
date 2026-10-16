@@ -31,6 +31,11 @@ export function Sidebar({ onCloseMobile }: SidebarProps) {
       isActive: location.pathname.startsWith('/comentarios'),
     },
     {
+      label: 'Imagens',
+      to: '/imagens',
+      isActive: location.pathname.startsWith('/imagens'),
+    },
+    {
       label: 'Vídeos',
       to: '/videos',
       isActive: location.pathname.startsWith('/videos'),

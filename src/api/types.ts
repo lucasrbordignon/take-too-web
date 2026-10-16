@@ -18,7 +18,7 @@ export interface ComentarioCreateDTO {
 export interface ComentarioDTO {
   id?: string
   texto?: string
-  timestampSegundos?: number
+  timestampSegundos?: number | null
   autorTipo?: string
   criadoEm?: string
 }
@@ -57,13 +57,15 @@ export interface ProjetoDTO {
   magicLinkAtivo?: boolean
 }
 
-export type VersaoCreateDTO = { arquivoUrl: string; videoId?: never } | { videoId: string; arquivoUrl?: never }
+export type VersaoCreateDTO = { arquivoUrl: string; videoId?: never; imagemId?: never } | { videoId: string; arquivoUrl?: never; imagemId?: never } | { imagemId: string; arquivoUrl?: never; videoId?: never }
 
 export interface VersaoDTO {
   id?: string
   numero?: number
   arquivoUrl?: string | null
-  tipoMidia?: 'VIDEO' | 'URL_LEGADA'
+  tipoMidia?: 'VIDEO' | 'URL_LEGADA' | 'IMAGEM'
+  imagemId?: string | null
+  imagem?: ImagemDTO | null
   videoId?: string | null
   video?: Pick<VideoDTO, 'id' | 'status' | 'duracaoSegundos' | 'largura' | 'altura' | 'proporcao' | 'orientacao'> | null
   status?: StatusVersao | string
@@ -213,3 +215,12 @@ export interface VideoPageDTO {
 }
 
 
+
+export interface ImagemDTO {
+  id: string; nome: string; tipo: string; tamanhoBytes: number; largura: number | null; altura: number | null
+  status: 'AGUARDANDO_UPLOAD' | 'PRONTA' | 'ERRO' | 'EXCLUIDA'; erro: string | null; criadoEm: string; atualizadoEm: string
+}
+export interface ImagemUploadCreateDTO { nome: string; tipo: string; tamanhoBytes: number; checksum: string }
+export interface ImagemUploadDTO { imagem: ImagemDTO; url: string; metodo: string; headers: Record<string, string>; expiraEm: string }
+export interface ImagemVisualizacaoDTO { imagem: ImagemDTO; url: string; expiraEm: string }
+export interface ImagemPageDTO { content: ImagemDTO[]; number: number; totalPages: number; totalElements: number; first: boolean; last: boolean }

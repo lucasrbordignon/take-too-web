@@ -21,6 +21,7 @@ export function useCriarVersao(projetoId?: string) {
       queryClient.invalidateQueries({ queryKey: versoesQueryKey(projetoId) })
       queryClient.invalidateQueries({ queryKey: ['project-videos', projetoId] })
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['images'] })
     },
   })
 }

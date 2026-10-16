@@ -4,6 +4,7 @@ import type { VersaoDTO } from '../api/types.ts'
 import { portalService } from '../services/portal.service.ts'
 import { versoesService } from '../services/versoes.service.ts'
 import { useSignedPlayback } from '../hooks/useSignedPlayback.ts'
+import { VersionImage } from './VersionImage.tsx'
 import { VideoPlayer } from './shared/VideoPlayer.tsx'
 
 type Props = Omit<ComponentProps<typeof VideoPlayer>, 'src'> & {
@@ -13,6 +14,7 @@ type Props = Omit<ComponentProps<typeof VideoPlayer>, 'src'> & {
 }
 
 export function VersionVideoPlayer(props: Props) {
+  if (props.versao?.imagemId) return <VersionImage key={props.versao.id} versao={props.versao} projetoId={props.projetoId} portal={props.portal} />
   if (!props.versao?.videoId) return <VideoPlayer {...props} src={props.versao?.arquivoUrl ?? undefined} />
   return <SignedVersionPlayer key={`${props.portal}:${props.versao.id}`} {...props} />
 }

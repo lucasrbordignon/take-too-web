@@ -259,3 +259,7 @@ O portal, a versão do profissional e a biblioteca usam o mesmo controle de repr
 ### Feedback sem interromper o vídeo
 
 Adicionar feedback abre um painel flutuante não modal sobre a revisão, sem trocar a tela, remontar o player ou pausar o vídeo. Os controles do vídeo continuam disponíveis. O comentário usa o segundo e a versão capturados ao abrir o painel, mesmo que a reprodução avance. Fechar preserva o rascunho; o texto só é limpo após envio confirmado. Falhas mantêm o painel e apresentam erro para tentar novamente.
+
+### Imagens privadas no S3
+
+A biblioteca **Imagens** permite enviar JPEG/PNG (até 10 MB e 25 megapixels por padrão), selecionar arquivos anteriores e excluir imagens não publicadas. O projeto oferece seleção do tipo de mídia no modal de publicação. Upload direto usa URL temporária, checksum SHA-256 e escrita condicional para impedir sobrescrita; a API confirma o arquivo real antes de liberar a publicação. A revisão de imagem usa visualização privada e comentários sem timestamp; versões e aprovação seguem o mesmo fluxo dos vídeos. Credenciais AWS ficam exclusivamente no backend. Consulte `docs/imagens-s3.md` no repositório take-too para IAM, CORS e variáveis.

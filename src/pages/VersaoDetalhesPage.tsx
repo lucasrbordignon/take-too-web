@@ -46,6 +46,8 @@ export function VersaoDetalhesPage() {
     return versoes.find((v) => v.id === versaoId) || versaoMaisRecente(versoes)
   }, [versoes, versaoId])
 
+  const isImage = !!versaoAtiva?.imagemId
+
   const formatTimecode = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = Math.floor(seconds % 60)
@@ -80,7 +82,7 @@ export function VersaoDetalhesPage() {
     criarComentario(
       {
         texto: trimmed,
-        tempoVideo: frozenTime,
+        ...(isImage ? {} : { tempoVideo: frozenTime }),
       },
       {
         onSuccess: () => {
@@ -158,7 +160,7 @@ export function VersaoDetalhesPage() {
                 {versaoAtiva ? `V${versaoAtiva.numero}` : 'V1'}
               </span>
               <span className="text-[14px] font-medium text-[#D7DAE0]">
-                {versaoAtiva?.numero === 1 ? 'Primeiro corte' : 'Corte preliminar'}
+                {isImage ? 'Imagem para revisão' : versaoAtiva?.numero === 1 ? 'Primeiro corte' : 'Corte preliminar'}
               </span>
             </div>
 
@@ -221,7 +223,7 @@ export function VersaoDetalhesPage() {
                 className="h-[34px] px-3 rounded-[8px] bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-[12px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-md shadow-purple-900/20"
               >
                 <span>＋</span>
-                <span>Nota em {formatTimecode(currentTime)}</span>
+                <span>{isImage ? 'Adicionar nota' : `Nota em ${formatTimecode(currentTime)}`}</span>
               </button>
             )}
           </div>
@@ -235,7 +237,7 @@ export function VersaoDetalhesPage() {
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-semibold text-[#A78BFA] uppercase tracking-wider flex items-center gap-1.5">
                   <span>⏱</span>
-                  <span>Congelado em {formatTimecode(frozenTime)}</span>
+                  <span>{isImage ? 'Comentário sobre a imagem' : `Congelado em ${formatTimecode(frozenTime)}`}</span>
                 </span>
 
                 <button
@@ -316,7 +318,7 @@ export function VersaoDetalhesPage() {
             ) : (
               comentarios.map((c) => {
                 const sec = c.timestampSegundos ?? 0
-                const isSelected = currentTime === sec || highlightedCommentId === c.id
+                const isSelected = (!isImage && currentTime === sec) || highlightedCommentId === c.id
                 const isClient = c.autorTipo === 'CLIENTE'
 
                 return (
@@ -344,7 +346,7 @@ export function VersaoDetalhesPage() {
                         }`}
                       >
                         <span>⏱</span>
-                        <span>{formatTimecode(sec)}</span>
+                        <span>{isImage ? 'Imagem' : formatTimecode(sec)}</span>
                       </button>
 
                       {/* Author Tag */}

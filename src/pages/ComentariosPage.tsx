@@ -35,6 +35,8 @@ export function ComentariosPage() {
     return ''
   }, [selectedVersaoId, versoes])
 
+  const activeIsImage = !!versoes?.find((version) => version.id === activeVersaoId)?.imagemId
+
   // Busca comentários da versão ativa
   const { data: comentarios, isLoading: isComentariosLoading } = useComentarios(activeVersaoId || undefined)
 
@@ -302,12 +304,12 @@ export function ComentariosPage() {
                   <div className="flex items-center justify-between">
                     {/* Timecode Link */}
                     <Link
-                      to={`/projetos/${activeProjetoId}/versoes/${activeVersaoId}?t=${sec}`}
+                      to={`/projetos/${activeProjetoId}/versoes/${activeVersaoId}${activeIsImage ? '' : `?t=${sec}`}`}
                       className="h-[26px] px-2.5 rounded-[6px] bg-[#242832] hover:bg-[#8B5CF6] text-[#A78BFA] hover:text-white font-mono text-[12px] font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-                      title="Abrir vídeo neste timecode"
+                      title={activeIsImage ? 'Abrir imagem da versão' : 'Abrir vídeo neste timecode'}
                     >
-                      <span>⏱</span>
-                      <span>{formatTimecode(sec)}</span>
+                      <span>{activeIsImage ? '▧' : '⏱'}</span>
+                      <span>{activeIsImage ? 'Imagem' : formatTimecode(sec)}</span>
                     </Link>
 
                     {/* Author Badge */}
@@ -333,7 +335,7 @@ export function ComentariosPage() {
                   </span>
 
                   <Link
-                    to={`/projetos/${activeProjetoId}/versoes/${activeVersaoId}?t=${sec}`}
+                    to={`/projetos/${activeProjetoId}/versoes/${activeVersaoId}${activeIsImage ? '' : `?t=${sec}`}`}
                     className="text-[#A78BFA] hover:text-white font-semibold flex items-center gap-1 transition-colors"
                   >
                     <span>Ir para o vídeo</span>
